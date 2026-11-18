@@ -1,0 +1,848 @@
+<title>Portal de Esquina Jaguar</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fugaz+One&family=Lexend:wght@300;400;500;600&display=swap">
+<style>
+/* Layout: prancha técnica — visor 3D no topo, depois planta, elevação, materiais, montagem e regras, numa coluna larga */
+:root {
+  --bg: #F2F5FA;
+  --panel: #FFFFFF;
+  --fg: #0B1A33;
+  --muted: #4E5D78;
+  --line: #D5DDEA;
+  --blue: #034491;
+  --blue-2: #2182BF;
+  --gold: #FFB217;
+  --gold-ink: #8A5A00;
+  --ok: #1E7F4F;
+  --warn: #B4232C;
+  --display: "Fugaz One", "Arial Black", Impact, sans-serif;
+  --body: "Lexend", "Segoe UI", system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #07142A; --panel: #0D1F3D; --fg: #E6EDF8; --muted: #9DB0CF; --line: #1E3560;
+    --blue: #6FB4FF; --blue-2: #31B5FF; --gold: #FFB217; --gold-ink: #FFC54D; --ok: #4CC98A; --warn: #FF6B73;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #07142A; --panel: #0D1F3D; --fg: #E6EDF8; --muted: #9DB0CF; --line: #1E3560;
+  --blue: #6FB4FF; --blue-2: #31B5FF; --gold: #FFB217; --gold-ink: #FFC54D; --ok: #4CC98A; --warn: #FF6B73;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--fg); font-family: var(--body); font-size: 15px; line-height: 1.55;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 20px 48px;
+}
+.wrap { max-width: 1180px; margin: 0 auto; display: grid; gap: 28px; }
+h1, h2 { font-family: var(--display); font-weight: 400; letter-spacing: .01em; text-wrap: balance; margin: 0; }
+h1 { font-size: clamp(30px, 6vw, 52px); line-height: 1; color: var(--blue); }
+h2 { font-size: clamp(22px, 3.2vw, 30px); color: var(--blue); }
+h3 { font-size: 15px; font-weight: 600; margin: 0 0 6px; }
+p { margin: 0; max-width: 68ch; }
+.eyebrow { font-size: 12px; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); font-weight: 500; }
+header { display: grid; gap: 10px; }
+.lede { color: var(--muted); }
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-top: 6px; }
+.stat { border-top: 3px solid var(--gold); padding-top: 8px; min-width: 0; }
+.stat b { display: block; font-family: var(--display); font-weight: 400; font-size: 24px; color: var(--fg); font-variant-numeric: tabular-nums; }
+.stat span { font-size: 13px; color: var(--muted); }
+
+/* visor */
+.viewer { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+#stage { position: relative; width: 100%; height: min(68vh, 620px); min-height: 360px; background: #9cc6e8; }
+#stage canvas { display: block; width: 100%; height: 100%; touch-action: none; }
+#loading { position: absolute; inset: 0; display: grid; place-items: center; font-family: var(--display); color: #034491; font-size: 22px; }
+.hint { position: absolute; left: 10px; bottom: 10px; font-size: 12px; background: rgba(3,20,48,.62); color: #fff; padding: 4px 8px; border-radius: 6px; pointer-events: none; }
+.toolbar { display: flex; flex-wrap: wrap; gap: 8px 16px; padding: 12px; border-top: 1px solid var(--line); align-items: center; }
+.group { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.group > .eyebrow { margin-right: 4px; }
+button.chip, label.chip {
+  font: 500 13px var(--body); color: var(--fg); background: transparent; border: 1px solid var(--line);
+  border-radius: 999px; padding: 6px 12px; cursor: pointer; display: inline-flex; gap: 6px; align-items: center;
+}
+button.chip[aria-pressed="true"], label.chip:has(input:checked) { background: var(--blue); border-color: var(--blue); color: var(--bg); }
+button.chip:focus-visible, label.chip:focus-within, input:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+label.chip input { position: absolute; opacity: 0; pointer-events: none; }
+.sun { display: flex; gap: 8px; align-items: center; font-size: 13px; color: var(--muted); }
+.sun input { width: 160px; accent-color: var(--gold); }
+#sunlabel { font-variant-numeric: tabular-nums; color: var(--fg); min-width: 92px; }
+
+section.block { display: grid; gap: 14px; }
+.two { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 18px; }
+.sheet { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 14px; min-width: 0; }
+.sheet svg { width: 100%; height: auto; display: block; }
+.scroll { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-size: 14px; font-variant-numeric: tabular-nums; }
+th, td { text-align: left; padding: 7px 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font-weight: 500; color: var(--muted); font-size: 12px; letter-spacing: .06em; text-transform: uppercase; }
+td.num, th.num { text-align: right; white-space: nowrap; }
+tfoot td { font-weight: 600; border-bottom: none; font-size: 16px; }
+.price { width: 92px; font: 500 14px var(--body); text-align: right; padding: 4px 6px; border: 1px solid var(--line); border-radius: 6px; background: var(--bg); color: var(--fg); }
+.tag { display: inline-block; font-size: 11px; padding: 1px 7px; border-radius: 999px; border: 1px solid currentColor; margin-left: 6px; white-space: nowrap; }
+.tag.est { color: var(--muted); }
+.tag.pes { color: var(--ok); }
+.note { font-size: 13px; color: var(--muted); }
+details { border-top: 1px solid var(--line); padding-top: 10px; }
+summary { cursor: pointer; font-weight: 500; }
+.cuts { font-size: 13px; columns: 2 280px; column-gap: 24px; margin: 10px 0 0; padding-left: 18px; }
+.cuts li { break-inside: avoid; margin-bottom: 3px; }
+ol.steps { margin: 0; padding-left: 22px; display: grid; gap: 10px; }
+ol.steps li { padding-left: 4px; }
+ol.steps b { font-weight: 600; }
+.who { font-size: 12px; color: var(--gold-ink); font-weight: 500; letter-spacing: .04em; }
+ul.rules { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+ul.rules li { display: grid; grid-template-columns: 22px 1fr; gap: 8px; }
+.mark { font-weight: 700; }
+.mark.ok { color: var(--ok); }
+.mark.att { color: var(--gold-ink); }
+footer { font-size: 12px; color: var(--muted); }
+@media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; } }
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">VI Campori DSA · Barretos · edição Ômega, 12 a 17/01/2027 · setor AMC</div>
+    <h1>Portal de Esquina Jaguar</h1>
+    <p class="lede">Projeto do portal do Clube de Desbravadores Jaguar para o lote de esquina (21 × 20 m). Tudo em bambu, compensado e sisal, sem cavar, com no máximo 3 m de altura. As medidas, a planta, a lista de materiais e o orçamento saem do mesmo modelo 3D.</p>
+    <div class="stats" id="stats"></div>
+  </header>
+
+  <section class="viewer" aria-label="Modelo 3D do portal">
+    <div id="stage"><div id="loading">Montando o portal…</div><div class="hint">Arraste para girar · role ou pince para aproximar</div></div>
+    <div class="toolbar">
+      <div class="group" role="group" aria-label="Vistas">
+        <span class="eyebrow">Vista</span>
+        <button class="chip" data-view="esquina" aria-pressed="true">Esquina</button>
+        <button class="chip" data-view="ruaA" aria-pressed="false">Rua de 21 m</button>
+        <button class="chip" data-view="ruaB" aria-pressed="false">Rua de 20 m</button>
+        <button class="chip" data-view="topo" aria-pressed="false">De cima</button>
+        <button class="chip" data-view="pedestre" aria-pressed="false">Chegando a pé</button>
+      </div>
+      <div class="group" role="group" aria-label="Camadas">
+        <span class="eyebrow">Mostrar</span>
+        <label class="chip"><input type="checkbox" id="tgDims" checked>Cotas</label>
+        <label class="chip"><input type="checkbox" id="tgPerson" checked>Pessoa 1,65 m</label>
+        <label class="chip"><input type="checkbox" id="tgNight">Noite (LED solar)</label>
+      </div>
+      <div class="sun">
+        <label for="hour">Sol em 14/01</label>
+        <input type="range" id="hour" min="6" max="18.5" step="0.25" value="12.5">
+        <span id="sunlabel">12h30</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="block" aria-labelledby="h-desenhos">
+    <h2 id="h-desenhos">Planta e elevação</h2>
+    <p class="note">O portal fica na diagonal da esquina, virado quase para o norte (a orientação foi tirada da planta de implantação da USeB, então é aproximada). Ao meio-dia de janeiro o sol fica quase a pino e um pouco ao sul, e a sombra das pintas em forma de janela cai na frente do portal, na pracinha da esquina.</p>
+    <div class="two">
+      <figure class="sheet" style="margin:0"><h3>Planta do lote (medidas em metros)</h3><div class="scroll" id="planta"></div></figure>
+      <figure class="sheet" style="margin:0"><h3>Elevação frontal, vista da esquina</h3><div class="scroll" id="elevacao"></div></figure>
+    </div>
+  </section>
+
+  <section class="block" aria-labelledby="h-mat">
+    <h2 id="h-mat">Materiais e orçamento</h2>
+    <p class="note">As quantidades saem do modelo. Os preços são editáveis: troque pelo valor que o fornecedor passar e o total atualiza. Marcados como <span class="tag pes">pesquisado</span> têm preço de loja encontrado; os de <span class="tag est">estimativa</span> precisam de cotação.</p>
+    <div class="sheet scroll">
+      <table id="budget">
+        <thead><tr><th>Item</th><th class="num">Qtd.</th><th class="num">Preço un. (R$)</th><th class="num">Subtotal</th></tr></thead>
+        <tbody></tbody>
+        <tfoot><tr><td colspan="3">Total estimado</td><td class="num" id="total"></td></tr></tfoot>
+      </table>
+    </div>
+    <div class="two">
+      <div class="sheet">
+        <h3>Peças de bambu por função</h3>
+        <div class="scroll"><table id="pieces"><thead><tr><th>Peça</th><th>Bitola</th><th class="num">Comp.</th><th class="num">Qtd.</th></tr></thead><tbody></tbody></table></div>
+      </div>
+      <div class="sheet">
+        <h3>Plano de corte</h3>
+        <p class="note" id="cutsum"></p>
+        <details><summary>Ver vara por vara</summary><ol class="cuts" id="cuts"></ol></details>
+      </div>
+    </div>
+  </section>
+
+  <section class="block" aria-labelledby="h-mont">
+    <h2 id="h-mont">Montagem com 8 pessoas</h2>
+    <div class="two">
+      <div class="sheet">
+        <h3>Antes da viagem, em BH</h3>
+        <ol class="steps">
+          <li><b>Cortar e numerar</b> todas as peças pelo plano de corte. Cada peça leva uma etiqueta com o código da função (P = pilar, L = lintel, C = cabeça, E = escudo, A = alas, T = totem, M = mastro).</li>
+          <li><b>Cortar e pintar as placas</b>: cabeça com as pintas vazadas (serra tico-tico), escudo, placa JAGUAR e os 10 totens. Duas demãos e verniz por causa da chuva.</li>
+          <li><b>Pré-furar</b> os bambus nos pontos de parafuso das placas, para não rachar no campo.</li>
+          <li><b>Fazer um ensaio completo</b> de montagem uma vez, num sábado. É o que garante que tudo encaixa e que a equipe sabe a ordem.</li>
+          <li><b>Carregar o caminhão</b>: a peça mais longa tem 3,60 m (vigas do lintel). Placas por cima, protegidas com papelão.</li>
+        </ol>
+      </div>
+      <div class="sheet">
+        <h3>No Parque do Peão (cerca de 5 a 6 horas)</h3>
+        <ol class="steps">
+          <li><span class="who">TODOS</span><br><b>Marcar a diagonal</b>: 6,40 m da esquina em cada rua, esticar a corda entre os dois pontos (9,05 m). O centro do portal fica no meio dela.</li>
+          <li><span class="who">EQUIPE 1 (4)</span><br><b>Pilares</b> montados deitados, levantados, galões dentro e cheios de água (80 kg por pilar).</li>
+          <li><span class="who">EQUIPE 2 (4)</span><br><b>Alas</b>: 6 cavaletes em X por rua, travessas e amarras.</li>
+          <li><span class="who">EQUIPE 1</span><br><b>Lintel e placa JAGUAR</b>, com 2 pessoas em escada de cada lado.</li>
+          <li><span class="who">EQUIPE 2</span><br><b>Totens</b> nos tripés, 5 por ala, e mastros com estais.</li>
+          <li><span class="who">TODOS</span><br><b>Cabeça e escudo</b>: estrutura de trás primeiro, placa depois, galões nos pés, estais na frente sinalizados com fita.</li>
+          <li><span class="who">TODOS</span><br><b>Conferir</b>: prumo, amarras, estais, altura (nada acima de 3,00 m), pegadas de rodela de bambu e LEDs.</li>
+        </ol>
+      </div>
+    </div>
+  </section>
+
+  <section class="block" aria-labelledby="h-regras">
+    <h2 id="h-regras">Conferência com o manual do Campori</h2>
+    <div class="sheet">
+      <ul class="rules" id="rules"></ul>
+    </div>
+  </section>
+
+  <footer>Fonte das regras: Manual de Orientações do VI Campori DSA 2027, p. 21, 22 e 34. Planta de implantação da USeB, revisão de 20/08/2026. Identidade visual: Apresentação Jaguar V3.</footer>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/controls/OrbitControls.js"></script>
+<script>
+(async function () {
+'use strict';
+const BRAND = { leal: '#034491', conf: '#2182BF', claro: '#31B5FF', ouro: '#FFB217', ouroEsc: '#CC8A15', ouroCl: '#FCB040', verm: '#FF1E2E' };
+const R2 = Math.SQRT1_2;
+const fmt = (n, d = 2) => n.toLocaleString('pt-BR', { minimumFractionDigits: d, maximumFractionDigits: d });
+const brl = n => n.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+
+// ---------- medidas do projeto (metros) ----------
+const S = {
+  lotA: 21, lotB: 20, chamfer: 6.4,
+  pillarX: 1.5, pillarHalf: 0.25, pillarH: 2.9, clearW: 2.4, clearH: 2.3,
+  lintelLow: 2.35, lintelHigh: 2.85, lintelHalf: 1.8,
+  head: { cx: 3.45, z: 0.55, w: 2.8, h: 2.95 },
+  esc: { cx: -3.35, z: 0.55, r: 1.1, cy: 1.75 },
+  wing: { start: 6.7, step: 1.4, n: 6, line: 0.45, h: 1.0 },
+  totemH: 1.85, mastH: 3.0, limit: 3.0
+};
+const UNITS_A = ['Onça Pintada', 'Leão', 'Pantera', 'Guepardo', 'Leopardo'];
+const UNITS_B = ['Lince', 'Lince Negra', 'Puma', 'Tigres', 'Tigresa'];
+const M = { x: S.chamfer / 2, z: S.chamfer / 2 };
+const L2W = (xl, zl) => ({ x: M.x + xl * R2 + zl * R2, z: M.z - xl * R2 + zl * R2 });
+
+// orientação (da planta da USeB): eixos locais em relação ao norte/leste
+const northL = norm2(-0.84, -0.62), eastL = norm2(0.54, -0.79);
+function norm2(x, z) { const l = Math.hypot(x, z); return { x: x / l, z: z / l }; }
+
+// ---------- contorno da cabeça (perfil do jaguar, olhando para a direita) ----------
+const HEAD_RAW = [[0.35,0.55],[0.15,1.3],[0.2,1.9],[0.45,2.45],[0.55,2.95],[0.95,2.62],[1.5,2.72],[2.1,2.47],[2.55,2.12],[2.8,1.86],[2.72,1.6],[2.45,1.55],[2.7,1.36],[2.55,1.1],[2.0,1.0],[1.75,0.5],[1.25,0.0],[0.8,0.25]];
+const HEAD = HEAD_RAW.map(([x, y]) => [x - S.head.w / 2, y]);
+function inPoly(px, py, poly) {
+  let c = false;
+  for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+    const [xi, yi] = poly[i], [xj, yj] = poly[j];
+    if ((yi > py) !== (yj > py) && px < (xj - xi) * (py - yi) / (yj - yi) + xi) c = !c;
+  }
+  return c;
+}
+// pintas em forma de janela da igreja (retângulo + arco), em fileiras (ordem unida)
+const WIN = { w: 0.16, h: 0.16 };
+const SPOTS = [];
+(function () {
+  const rows = [[1.62, -0.75, 0.45], [1.98, -0.75, 0.45], [2.34, -0.55, 0.15], [0.82, -0.85, 0.05], [1.2, -0.95, 0.25]];
+  rows.forEach(([y, x0, x1], r) => {
+    const off = (r % 2) * 0.14;
+    for (let x = x0 + off; x <= x1 + 1e-6; x += 0.28) {
+      const pts = [[x - .12, y - .06], [x + .12, y - .06], [x - .12, y + .3], [x + .12, y + .3], [x, y + .36]];
+      if (pts.every(([a, b]) => inPoly(a, b, HEAD))) SPOTS.push([x, y]);
+    }
+  });
+})();
+const EYE = [0.68, 2.12];
+
+// ---------- coleta de materiais ----------
+const BOM = { pieces: [], joints: 0, estais: [], galoes: 0, rodelas: 0 };
+const round2 = n => Math.round(n * 100) / 100;
+
+// ---------- three.js ----------
+try { await Promise.all([document.fonts.load('400 120px "Fugaz One"'), document.fonts.load('500 40px Lexend')]); } catch (e) {}
+const stage = document.getElementById('stage');
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.outputEncoding = THREE.sRGBEncoding;
+stage.prepend(renderer.domElement);
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 400);
+const controls = new THREE.OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true; controls.maxPolarAngle = Math.PI / 2 - 0.02; controls.minDistance = 2; controls.maxDistance = 70;
+
+const hemi = new THREE.HemisphereLight(0xdfefff, 0x5a6b3a, 0.65); scene.add(hemi);
+const sun = new THREE.DirectionalLight(0xfff3dc, 1.15);
+sun.castShadow = true; sun.shadow.mapSize.set(2048, 2048);
+Object.assign(sun.shadow.camera, { left: -16, right: 16, top: 16, bottom: -16, near: 1, far: 80 });
+sun.shadow.bias = -0.0006; sun.shadow.normalBias = 0.02;
+sun.target.position.set(6, 0, 6); scene.add(sun, sun.target);
+
+const v = (x, y, z) => new THREE.Vector3(x, y, z);
+const mat = (color, o = {}) => new THREE.MeshStandardMaterial(Object.assign({ color, roughness: 0.75, metalness: 0 }, o));
+
+// textura de bambu com nós
+function bambooTexture() {
+  const c = document.createElement('canvas'); c.width = 16; c.height = 128;
+  const g = c.getContext('2d');
+  const grd = g.createLinearGradient(0, 0, 16, 0);
+  grd.addColorStop(0, '#b8924e'); grd.addColorStop(.5, '#d9b878'); grd.addColorStop(1, '#a9853f');
+  g.fillStyle = grd; g.fillRect(0, 0, 16, 128);
+  g.fillStyle = '#7d5f2a'; g.fillRect(0, 60, 16, 6);
+  g.fillStyle = 'rgba(255,255,255,.18)'; g.fillRect(0, 66, 16, 2);
+  const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.encoding = THREE.sRGBEncoding;
+  return t;
+}
+const BAMBOO_TEX = bambooTexture();
+const bambooMat = mat(0xffffff, { map: BAMBOO_TEX, roughness: 0.6 });
+const ropeMat = mat(0xcbb48a, { roughness: 1 });
+const Y = v(0, 1, 0);
+
+function bamboo(parent, a, b, cls, label) {
+  const r = cls === 'g' ? 0.048 : 0.028;
+  const len = a.distanceTo(b);
+  const geo = new THREE.CylinderGeometry(r, r, len, 10, 1);
+  const uv = geo.attributes.uv; for (let i = 0; i < uv.count; i++) uv.setY(i, uv.getY(i) * len / 0.4);
+  const m = new THREE.Mesh(geo, bambooMat);
+  m.position.copy(a).add(b).multiplyScalar(0.5);
+  m.quaternion.setFromUnitVectors(Y, b.clone().sub(a).normalize());
+  m.castShadow = m.receiveShadow = true;
+  parent.add(m);
+  BOM.pieces.push({ cls, len: round2(len), label });
+  return m;
+}
+const galaoGeo = new THREE.CylinderGeometry(0.135, 0.135, 0.46, 16);
+const galaoMat = mat(0x3b82c4, { transparent: true, opacity: 0.85, roughness: 0.3 });
+function galao(parent, x, z) { const m = new THREE.Mesh(galaoGeo, galaoMat); m.position.set(x, 0.23, z); m.castShadow = true; parent.add(m); BOM.galoes++; }
+function estai(parent, a, b, label) {
+  const len = a.distanceTo(b);
+  const m = new THREE.Mesh(new THREE.CylinderGeometry(0.006, 0.006, len, 4), ropeMat);
+  m.position.copy(a).add(b).multiplyScalar(0.5); m.quaternion.setFromUnitVectors(Y, b.clone().sub(a).normalize());
+  parent.add(m);
+  const peg = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.12, 0.04), mat(0x6b4a2b)); peg.position.set(b.x, 0.06, b.z); parent.add(peg);
+  BOM.estais.push({ len: len + 1.0, label });
+}
+
+// texturas de texto
+function canvasTex(w, h, draw) {
+  const c = document.createElement('canvas'); c.width = w; c.height = h;
+  draw(c.getContext('2d'), w, h);
+  const t = new THREE.CanvasTexture(c); t.encoding = THREE.sRGBEncoding; t.anisotropy = 8; return t;
+}
+function windowPath(g, x, y, w, h) { // janela: base retangular + arco
+  g.beginPath(); g.moveTo(x - w / 2, y + h); g.lineTo(x - w / 2, y + w / 2); g.arc(x, y + w / 2, w / 2, Math.PI, 0); g.lineTo(x + w / 2, y + h); g.closePath();
+}
+function arcText(g, text, cx, cy, r, start, end, top) {
+  const chars = [...text]; const n = chars.length;
+  for (let i = 0; i < n; i++) {
+    const a = start + (end - start) * (i + 0.5) / n;
+    g.save(); g.translate(cx + r * Math.cos(a), cy + r * Math.sin(a)); g.rotate(a + (top ? Math.PI / 2 : -Math.PI / 2));
+    g.fillText(chars[i], 0, 0); g.restore();
+  }
+}
+
+// ---------- chão, lote, ruas ----------
+const ground = new THREE.Mesh(new THREE.PlaneGeometry(140, 140), mat(0x7f9f58, { roughness: 1 }));
+ground.rotation.x = -Math.PI / 2; ground.position.set(10, -0.01, 10); ground.receiveShadow = true; scene.add(ground);
+const street = mat(0xcdb98f, { roughness: 1 });
+const sa = new THREE.Mesh(new THREE.PlaneGeometry(60, 8), street); sa.rotation.x = -Math.PI / 2; sa.position.set(12, 0, -4); sa.receiveShadow = true; scene.add(sa);
+const sb = new THREE.Mesh(new THREE.PlaneGeometry(9, 60), street); sb.rotation.x = -Math.PI / 2; sb.position.set(-4.5, 0.001, 12); sb.receiveShadow = true; scene.add(sb);
+const lot = new THREE.Mesh(new THREE.PlaneGeometry(S.lotA, S.lotB), mat(0x8fb366, { roughness: 1 }));
+lot.rotation.x = -Math.PI / 2; lot.position.set(S.lotA / 2, 0.003, S.lotB / 2); lot.receiveShadow = true; scene.add(lot);
+const lotEdge = new THREE.LineLoop(new THREE.BufferGeometry().setFromPoints([v(0, .02, 0), v(S.lotA, .02, 0), v(S.lotA, .02, S.lotB), v(0, .02, S.lotB)]), new THREE.LineBasicMaterial({ color: 0xffffff }));
+scene.add(lotEdge);
+// pracinha da esquina (triângulo)
+const tri = new THREE.Shape([new THREE.Vector2(0, 0), new THREE.Vector2(S.chamfer, 0), new THREE.Vector2(0, S.chamfer)]);
+const triM = new THREE.Mesh(new THREE.ShapeGeometry(tri), mat(0xd8c79c, { roughness: 1 }));
+triM.rotation.x = Math.PI / 2; triM.position.y = 0.005; triM.receiveShadow = true; scene.add(triM);
+// barracas de contexto
+for (let i = 0; i < 6; i++) {
+  const t = new THREE.Mesh(new THREE.ConeGeometry(1.3, 1.4, 4), mat(i % 2 ? 0x2a5d9c : 0x3c7f4f));
+  t.position.set(9 + (i % 3) * 3.4, 0.7, 9 + Math.floor(i / 3) * 3.6); t.rotation.y = Math.PI / 4; t.castShadow = true; scene.add(t);
+}
+
+// ---------- portal (grupo local: x ao longo da diagonal, -z = frente) ----------
+const portal = new THREE.Group(); portal.position.set(M.x, 0, M.z); portal.rotation.y = Math.PI / 4; scene.add(portal);
+
+function pillar(sx) {
+  const a = S.pillarHalf, h = S.pillarH;
+  const cs = [[-a, -a], [a, -a], [a, a], [-a, a]];
+  cs.forEach(([dx, dz]) => bamboo(portal, v(sx + dx, 0, dz), v(sx + dx, h, dz), 'g', 'Pilar · montante'));
+  [0.55, 1.45, 2.25].forEach(y => {
+    for (let i = 0; i < 4; i++) { const [x1, z1] = cs[i], [x2, z2] = cs[(i + 1) % 4]; bamboo(portal, v(sx + x1, y, z1), v(sx + x2, y, z2), 'f', 'Pilar · travessa'); }
+    BOM.joints += 4;
+  });
+  [-a, a].forEach(dx => { bamboo(portal, v(sx + dx, 0.55, -a), v(sx + dx, 2.25, a), 'f', 'Pilar · diagonal'); BOM.joints += 2; });
+  [[-1, -1], [1, -1], [1, 1], [-1, 1]].forEach(([i, j]) => galao(portal, sx + i * 0.135, j * 0.135));
+  [-1, 1].forEach(s => estai(portal, v(sx + s * a, 2.2, a), v(sx + s * 0.8, 0, 1.9), 'Estai do pilar'));
+}
+pillar(-S.pillarX); pillar(S.pillarX);
+// lintel
+[S.lintelLow, S.lintelHigh].forEach(y => [-1, 1].forEach(s => {
+  bamboo(portal, v(-S.lintelHalf, y, s * 0.345), v(S.lintelHalf, y, s * 0.345), 'g', 'Lintel · viga');
+  BOM.joints += 4;
+}));
+// placa JAGUAR
+const nameTex = canvasTex(1360, 200, (g, w, h) => {
+  g.fillStyle = BRAND.leal; g.fillRect(0, 0, w, h);
+  g.strokeStyle = BRAND.ouro; g.lineWidth = 8; g.strokeRect(10, 10, w - 20, h - 20);
+  g.fillStyle = BRAND.ouro; g.font = '400 150px "Fugaz One", Impact, sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
+  g.fillText('JAGUAR', w / 2, h / 2 + 8);
+  g.fillStyle = BRAND.claro;
+  for (let i = 0; i < 3; i++) { windowPath(g, 90 + i * 70, 62, 34, 76); g.fill(); windowPath(g, w - 90 - i * 70, 62, 34, 76); g.fill(); }
+});
+const nameBoard = new THREE.Mesh(new THREE.BoxGeometry(3.4, 0.5, 0.012), [mat(BRAND.leal), mat(BRAND.leal), mat(BRAND.leal), mat(BRAND.leal), mat(0xffffff, { map: nameTex }), mat(BRAND.leal)]);
+nameBoard.rotation.y = Math.PI; nameBoard.position.set(0, 2.6, -0.4); nameBoard.castShadow = true; portal.add(nameBoard);
+
+// cabeça do jaguar
+const head = new THREE.Group(); head.position.set(S.head.cx, 0, S.head.z); head.rotation.y = Math.PI; portal.add(head);
+const shape = new THREE.Shape(HEAD.map(([x, y]) => new THREE.Vector2(x, y)));
+SPOTS.forEach(([x, y]) => {
+  const p = new THREE.Path(); const w = WIN.w / 2;
+  p.moveTo(x - w, y); p.lineTo(x + w, y); p.lineTo(x + w, y + WIN.h); p.absarc(x, y + WIN.h, w, 0, Math.PI, false); p.lineTo(x - w, y);
+  shape.holes.push(p);
+});
+const headGeo = new THREE.ExtrudeGeometry(shape, { depth: 0.02, bevelEnabled: false, curveSegments: 10 });
+const headMesh = new THREE.Mesh(headGeo, [mat(BRAND.ouro, { roughness: 0.55 }), mat(BRAND.leal)]);
+headMesh.position.z = -0.01; headMesh.castShadow = true; headMesh.receiveShadow = true; head.add(headMesh);
+const eye = new THREE.Mesh(new THREE.CircleGeometry(0.09, 24), mat(BRAND.claro, { emissive: 0x000000 }));
+eye.position.set(EYE[0], EYE[1], 0.016); head.add(eye);
+const nose = new THREE.Mesh(new THREE.ShapeGeometry(new THREE.Shape([new THREE.Vector2(1.18, 1.86), new THREE.Vector2(1.36, 1.86), new THREE.Vector2(1.3, 1.72)])), mat(BRAND.verm));
+nose.position.z = 0.016; head.add(nose);
+// estrutura de trás da cabeça
+[-0.6, 0.5].forEach(px => {
+  bamboo(head, v(px, 0, -0.08), v(px, 2.6, -0.08), 'g', 'Cabeça · poste');
+  bamboo(head, v(px, 2.2, -0.12), v(px, 0, -1.3), 'g', 'Cabeça · escora');
+  bamboo(head, v(px, 0.05, -0.08), v(px, 0.05, -1.3), 'f', 'Cabeça · pé');
+  galao(head, px, -0.75); galao(head, px, -1.05);
+  estai(head, v(px, 2.3, 0.02), v(px + (px < 0 ? -0.3 : 0.3), 0, 1.4), 'Estai da cabeça (frente)');
+  BOM.joints += 3;
+});
+[0.6, 1.5, 2.3].forEach(y => { bamboo(head, v(-1.15, y, -0.04), v(1.1, y, -0.04), 'f', 'Cabeça · travessa'); BOM.joints += 2; });
+
+// escudo com os dados exigidos pelo manual
+const esc = new THREE.Group(); esc.position.set(S.esc.cx, 0, S.esc.z); esc.rotation.y = Math.PI; portal.add(esc);
+const escTex = canvasTex(1024, 1024, (g, w) => {
+  const c = w / 2;
+  g.fillStyle = BRAND.leal; g.beginPath(); g.arc(c, c, c, 0, Math.PI * 2); g.fill();
+  g.fillStyle = BRAND.conf; g.beginPath(); g.arc(c, c, c * 0.72, 0, Math.PI * 2); g.fill();
+  g.fillStyle = '#fff'; g.textAlign = 'center'; g.textBaseline = 'middle';
+  g.font = '400 64px "Fugaz One", Impact, sans-serif';
+  arcText(g, 'CLUBE DE DESBRAVADORES', c, c, c * 0.86, Math.PI * 1.13, Math.PI * 1.87, true);
+  g.fillStyle = BRAND.ouro; g.font = '400 70px "Fugaz One", Impact, sans-serif';
+  arcText(g, 'SEMPRE DESBRAVADOR', c, c, c * 0.86, Math.PI * 0.87, Math.PI * 0.13, false);
+  g.fillStyle = BRAND.ouro; g.font = '400 150px "Fugaz One", Impact, sans-serif'; g.fillText('JAGUAR', c, c - 150);
+  g.fillStyle = '#fff'; g.font = '600 50px Lexend, sans-serif';
+  g.fillText('BELO HORIZONTE · MG', c, c - 30); g.fillText('BRASIL', c, c + 32);
+  g.font = '500 36px Lexend, sans-serif';
+  g.fillText('ASSOCIAÇÃO MINEIRA CENTRAL', c, c + 100); g.fillText('UNIÃO SUDESTE BRASILEIRA', c, c + 148);
+  g.fillStyle = BRAND.verm; g.beginPath(); g.moveTo(c - 250, c + 230); g.lineTo(c - 222, c + 180); g.lineTo(c - 194, c + 230); g.fill();
+  g.beginPath(); g.moveTo(c + 194, c + 180); g.lineTo(c + 250, c + 180); g.lineTo(c + 222, c + 230); g.fill();
+  g.fillStyle = '#fff'; g.font = '400 54px "Fugaz One", Impact, sans-serif'; g.fillText('1999', c, c + 215);
+});
+const disc = new THREE.Mesh(new THREE.CircleGeometry(S.esc.r, 72), mat(0xffffff, { map: escTex }));
+disc.position.set(0, S.esc.cy, 0.012); disc.castShadow = true; esc.add(disc);
+const discBack = new THREE.Mesh(new THREE.CircleGeometry(S.esc.r, 72), mat(BRAND.leal)); discBack.rotation.y = Math.PI; discBack.position.set(0, S.esc.cy, 0); discBack.castShadow = true; esc.add(discBack);
+const rim = new THREE.Mesh(new THREE.TorusGeometry(S.esc.r, 0.025, 8, 72), mat(BRAND.ouro)); rim.position.set(0, S.esc.cy, 0.006); esc.add(rim);
+[-0.55, 0.55].forEach(px => {
+  bamboo(esc, v(px, 0, -0.06), v(px, 2.5, -0.06), 'g', 'Escudo · poste');
+  bamboo(esc, v(px, 2.0, -0.1), v(px, 0, -1.2), 'g', 'Escudo · escora');
+  bamboo(esc, v(px, 0.05, -0.06), v(px, 0.05, -1.2), 'f', 'Escudo · pé');
+  galao(esc, px, -0.85); BOM.joints += 3;
+});
+[1.1, 2.3].forEach(y => { bamboo(esc, v(-0.68, y, -0.03), v(0.68, y, -0.03), 'f', 'Escudo · travessa'); BOM.joints += 2; });
+
+// ---------- alas, totens e mastros (coordenadas do lote) ----------
+function placeA(x, y, z) { return v(x, y, z); }          // ala ao longo da rua de 21 m
+function placeB(x, y, z) { return v(z, y, x); }          // ala ao longo da rua de 20 m (espelhada)
+function totemTex(name, dark) {
+  return canvasTex(500, 700, (g, w, h) => {
+    g.fillStyle = dark ? BRAND.leal : BRAND.ouro; g.fillRect(0, 0, w, h);
+    g.strokeStyle = dark ? BRAND.ouro : BRAND.leal; g.lineWidth = 14; g.strokeRect(14, 14, w - 28, h - 28);
+    const ink = dark ? '#fff' : BRAND.leal;
+    g.fillStyle = dark ? BRAND.ouro : BRAND.leal; g.textAlign = 'center'; g.textBaseline = 'middle';
+    g.font = '500 34px Lexend, sans-serif'; g.fillText('UNIDADE', w / 2, 90);
+    g.fillStyle = ink; const words = name.toUpperCase().split(' ');
+    g.font = '400 ' + (words.some(s => s.length > 7) ? 82 : 96) + 'px "Fugaz One", Impact, sans-serif';
+    words.forEach((wd, i) => g.fillText(wd, w / 2, h / 2 - (words.length - 1) * 50 + i * 100));
+    g.fillStyle = dark ? BRAND.claro : BRAND.leal;
+    for (let i = 0; i < 4; i++) { windowPath(g, 130 + i * 80, 560, 40, 80); g.fill(); }
+  });
+}
+function wing(place, units, flagLabel, flagColor) {
+  const W = S.wing, line = W.line;
+  const xs = Array.from({ length: W.n }, (_, i) => W.start + i * W.step);
+  xs.forEach(x => {
+    bamboo(scene, place(x, 0, line - 0.4), place(x, 1.1, line + 0.4), 'f', 'Ala · perna do cavalete');
+    bamboo(scene, place(x, 0, line + 0.4), place(x, 1.1, line - 0.4), 'f', 'Ala · perna do cavalete');
+    BOM.joints += 3;
+  });
+  for (let i = 0; i < xs.length - 1; i++) [0.45, 0.95].forEach(y => bamboo(scene, place(xs[i] - 0.05, y, line), place(xs[i + 1] + 0.05, y, line), 'f', 'Ala · travessa'));
+  units.forEach((u, i) => {
+    const x = xs[i] + W.step / 2, z = 1.0, top = place(x, S.totemH, z);
+    for (let k = 0; k < 3; k++) { const a = Math.PI / 2 + k * 2 * Math.PI / 3; bamboo(scene, top, place(x + Math.cos(a) * 0.4, 0, z + Math.sin(a) * 0.4), 'f', 'Totem · perna do tripé'); }
+    BOM.joints += 2;
+    const board = new THREE.Mesh(new THREE.PlaneGeometry(0.5, 0.7), mat(0xffffff, { map: totemTex(u, i % 2 === 0), side: THREE.DoubleSide }));
+    board.position.copy(place(x, 1.4, z - 0.12));
+    board.lookAt(place(x, 1.4, z - 5)); board.castShadow = true; scene.add(board);
+  });
+  // mastro
+  const mx = xs[xs.length - 1] + 0.75, mz = 0.7;
+  bamboo(scene, place(mx, 0, mz), place(mx, S.mastH, mz), 'f', 'Mastro');
+  for (let k = 0; k < 3; k++) {
+    const a = k * 2 * Math.PI / 3;
+    bamboo(scene, place(mx, 0.9, mz), place(mx + Math.cos(a) * 0.55, 0, mz + Math.sin(a) * 0.55), 'f', 'Mastro · pé do tripé');
+    estai(scene, place(mx, 2.4, mz), place(mx + Math.cos(a + 1) * 1.5, 0, mz + Math.abs(Math.sin(a + 1)) * 1.5 + 0.2), 'Estai do mastro');
+  }
+  BOM.joints += 3;
+  const flag = new THREE.Mesh(new THREE.PlaneGeometry(0.9, 0.6), mat(flagColor, { side: THREE.DoubleSide, roughness: 0.9 }));
+  flag.position.copy(place(mx + 0.47, 2.62, mz)); flag.lookAt(place(mx + 0.47, 2.62, mz - 5)); flag.castShadow = true; scene.add(flag);
+  return { xs, mx, mz };
+}
+const WA = wing(placeA, UNITS_A, 'Desbravadores', 0xf2f2f2);
+const WB = wing(placeB, UNITS_B, 'Clube', 0x034491);
+
+// pegadas de rodela de bambu (sobras do corte)
+const pawMat = mat(0xc8a35d, { roughness: 0.8 });
+[0.9, 1.7, 2.5, 3.3].forEach((t, i) => {
+  const side = i % 2 ? 0.2 : -0.2;
+  const cx = t * R2 + side * R2, cz = t * R2 - side * R2;
+  const pad = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.11, 0.03, 20), pawMat); pad.position.set(cx, 0.015, cz); pad.receiveShadow = true; scene.add(pad);
+  BOM.rodelas++;
+  [-0.5, -0.17, 0.17, 0.5].forEach(o => {
+    const toe = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.045, 0.03, 14), pawMat);
+    const f = 0.17, ang = Math.PI / 4 + o;
+    toe.position.set(cx + Math.cos(ang) * f, 0.015, cz + Math.sin(ang) * f); scene.add(toe); BOM.rodelas++;
+  });
+});
+
+// pessoa para escala
+const person = new THREE.Group();
+const body = new THREE.Mesh(new THREE.CylinderGeometry(0.17, 0.19, 1.2, 16), mat(0x1d3a6b)); body.position.y = 0.8;
+const legs = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.13, 0.4, 12), mat(0x2b2b2b)); legs.position.y = 0.2;
+const headP = new THREE.Mesh(new THREE.SphereGeometry(0.12, 16, 12), mat(0xc58c5c)); headP.position.y = 1.53;
+person.add(body, legs, headP); person.traverse(o => { if (o.isMesh) o.castShadow = true; });
+person.position.set(2.4, 0, 2.0); scene.add(person);
+
+// ---------- cotas ----------
+const dims = new THREE.Group(); scene.add(dims);
+const dimLine = new THREE.LineBasicMaterial({ color: 0x0b1a33, depthTest: false });
+const limitLine = new THREE.LineDashedMaterial({ color: 0xd61f2c, dashSize: 0.2, gapSize: 0.12, depthTest: false });
+function label(text, pos, color = '#0B1A33', bg = 'rgba(255,255,255,.92)') {
+  const t = canvasTex(512, 128, (g, w, h) => {
+    g.fillStyle = bg; const r = 26; g.beginPath(); g.roundRect ? g.roundRect(6, 14, w - 12, h - 28, r) : g.rect(6, 14, w - 12, h - 28); g.fill();
+    g.fillStyle = color; g.font = '600 56px Lexend, sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(text, w / 2, h / 2 + 2);
+  });
+  const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: t, depthTest: false })); s.scale.set(1.15, 0.29, 1); s.position.copy(pos); s.renderOrder = 10; dims.add(s);
+}
+function dim(a, b, text, tick = 0.12, offset) {
+  const pts = [a, b];
+  const dir = b.clone().sub(a).normalize();
+  const perp = offset || (Math.abs(dir.y) > 0.9 ? v(tick, 0, 0) : v(0, tick, 0));
+  [a, b].forEach(p => { pts.push(p.clone().add(perp)); pts.push(p.clone().sub(perp)); });
+  const g = new THREE.BufferGeometry().setFromPoints([a, b, pts[2], pts[3], pts[4], pts[5]]);
+  const l = new THREE.LineSegments(g, dimLine); l.renderOrder = 9; dims.add(l);
+  label(text, a.clone().add(b).multiplyScalar(0.5));
+}
+const P = (xl, y, zl) => { const w = L2W(xl, zl); return v(w.x, y, w.z); };
+dim(P(-1.2, 0.12, -0.9), P(1.2, 0.12, -0.9), 'vão 2,40 m');
+dim(P(0.3, 0, -0.9), P(0.3, S.clearH, -0.9), 'livre 2,30 m');
+dim(P(-1.95, 0, -0.5), P(-1.95, S.pillarH, -0.5), 'pilar 2,90 m');
+dim(P(5.05, 0, 0.5), P(5.05, S.head.h, 0.5), 'cabeça 2,95 m');
+dim(P(-4.45, 3.15, 0.5), P(-2.25, 3.15, 0.5), 'escudo Ø 2,20 m');
+const lim = new THREE.Line(new THREE.BufferGeometry().setFromPoints([P(-5.2, S.limit, 0.2), P(5.4, S.limit, 0.2)]), limitLine);
+lim.computeLineDistances(); lim.renderOrder = 9; dims.add(lim);
+label('limite do manual 3,00 m', P(0.2, S.limit + 0.32, 0.2), '#D61F2C');
+dim(v(0, 0.05, -1.4), v(S.lotA, 0.05, -1.4), 'frente 21,00 m', 0.15, v(0, 0, 0.15));
+dim(v(-1.4, 0.05, 0), v(-1.4, 0.05, S.lotB), 'frente 20,00 m', 0.15, v(0.15, 0, 0));
+dim(v(0, 0.05, -0.55), v(S.chamfer, 0.05, -0.55), '6,40 m', 0.12, v(0, 0, 0.12));
+dim(v(S.wing.start, 1.25, -0.25), v(S.wing.start + (S.wing.n - 1) * S.wing.step, 1.25, -0.25), 'ala 7,00 m');
+dim(v(WA.mx + 0.3, 0, WA.mz - 0.5), v(WA.mx + 0.3, S.mastH, WA.mz - 0.5), 'mastro 3,00 m');
+dim(v(S.wing.start + 0.7 + 0.45, 0, 0.5), v(S.wing.start + 0.7 + 0.45, S.totemH, 0.5), 'totem 1,85 m');
+
+// ---------- LED solar (modo noite) ----------
+const leds = new THREE.Group(); leds.visible = false; scene.add(leds);
+const ledMat = new THREE.MeshBasicMaterial({ color: 0xffd36a });
+const ledGeo = new THREE.SphereGeometry(0.022, 6, 6);
+function ledAlong(parent, pts, step = 0.12) {
+  for (let i = 0; i < pts.length - 1; i++) {
+    const a = pts[i], b = pts[i + 1], n = Math.max(1, Math.round(a.distanceTo(b) / step));
+    for (let k = 0; k < n; k++) { const m = new THREE.Mesh(ledGeo, ledMat); m.position.lerpVectors(a, b, k / n); parent.add(m); }
+  }
+}
+const headLed = new THREE.Group(); head.add(headLed);
+ledAlong(headLed, [...HEAD, HEAD[0]].map(([x, y]) => v(x, y, 0.03)));
+const boardLed = new THREE.Group(); portal.add(boardLed);
+ledAlong(boardLed, [v(-1.7, 2.35, -0.42), v(1.7, 2.35, -0.42), v(1.7, 2.85, -0.42), v(-1.7, 2.85, -0.42), v(-1.7, 2.35, -0.42)]);
+headLed.visible = boardLed.visible = false;
+const glow1 = new THREE.PointLight(0xffc35a, 0, 7); glow1.position.copy(P(0, 2.4, -1.2)); scene.add(glow1);
+const glow2 = new THREE.PointLight(0xffc35a, 0, 6); glow2.position.copy(P(3.4, 2.0, -0.8)); scene.add(glow2);
+
+// ---------- sol de janeiro em Barretos ----------
+const LAT = -20.56 * Math.PI / 180, DEC = -21.2 * Math.PI / 180, SOLAR_NOON = 12.38;
+let night = false;
+function setSun(hour) {
+  const H = (hour - SOLAR_NOON) * 15 * Math.PI / 180;
+  const sinAlt = Math.sin(LAT) * Math.sin(DEC) + Math.cos(LAT) * Math.cos(DEC) * Math.cos(H);
+  const alt = Math.asin(sinAlt);
+  const az = Math.atan2(-Math.cos(DEC) * Math.sin(H), Math.sin(DEC) * Math.cos(LAT) - Math.cos(DEC) * Math.sin(LAT) * Math.cos(H));
+  const e = Math.sin(az) * Math.cos(alt), n = Math.cos(az) * Math.cos(alt);
+  const dx = e * eastL.x + n * northL.x, dz = e * eastL.z + n * northL.z;
+  sun.position.set(6 + dx * 40, Math.max(0.5, Math.sin(alt) * 40), 6 + dz * 40);
+  const day = Math.max(0, Math.min(1, alt / 0.25));
+  sun.intensity = night ? 0 : 1.15 * day;
+  const hh = Math.floor(hour), mm = Math.round((hour - hh) * 60);
+  document.getElementById('sunlabel').textContent = `${hh}h${String(mm).padStart(2, '0')} · ${Math.round(alt * 180 / Math.PI)}° de altura`;
+  applySky(day);
+}
+function applySky(day) {
+  if (night) { scene.background = new THREE.Color(0x0a1530); hemi.intensity = 0.12; scene.fog = new THREE.Fog(0x0a1530, 30, 90); return; }
+  const c = new THREE.Color(0xf3b27a).lerp(new THREE.Color(0x9cc6e8), day);
+  scene.background = c; scene.fog = new THREE.Fog(c, 45, 120); hemi.intensity = 0.35 + 0.35 * day;
+}
+function setNight(on) {
+  night = on; leds.visible = headLed.visible = boardLed.visible = on;
+  glow1.intensity = glow2.intensity = on ? 1.4 : 0;
+  eye.material.emissive.set(on ? 0x31b5ff : 0x000000); eye.material.emissiveIntensity = on ? 1.6 : 0;
+  setSun(+document.getElementById('hour').value);
+}
+
+// ---------- câmeras ----------
+const center = v(M.x + 0.6, 1.3, M.z + 0.6);
+const VIEWS = {
+  esquina: { pos: v(-8.5, 5.2, -8.5), tgt: center },
+  ruaA: { pos: v(9.5, 1.7, -7.5), tgt: v(6, 1.3, 2) },
+  ruaB: { pos: v(-7.5, 1.7, 9.5), tgt: v(2, 1.3, 6) },
+  topo: { pos: v(8.6, 34, 8.4), tgt: v(8.5, 0, 8.5) },
+  pedestre: { pos: v(-1.6, 1.6, -1.6), tgt: v(M.x + 1, 1.8, M.z + 1) }
+};
+let anim = null;
+function goView(name) {
+  const V = VIEWS[name]; anim = { t0: performance.now(), p0: camera.position.clone(), q0: controls.target.clone(), p1: V.pos, q1: V.tgt };
+  document.querySelectorAll('[data-view]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.view === name)));
+}
+camera.position.copy(VIEWS.esquina.pos); controls.target.copy(VIEWS.esquina.tgt);
+const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+function resize() { const w = stage.clientWidth, h = stage.clientHeight; renderer.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix(); }
+new ResizeObserver(resize).observe(stage); resize();
+function loop(now) {
+  if (anim) {
+    let k = reduce ? 1 : Math.min(1, (now - anim.t0) / 700); const e = k < .5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2;
+    camera.position.lerpVectors(anim.p0, anim.p1, e); controls.target.lerpVectors(anim.q0, anim.q1, e);
+    if (k >= 1) anim = null;
+  }
+  controls.update(); renderer.render(scene, camera); requestAnimationFrame(loop);
+}
+requestAnimationFrame(loop);
+document.getElementById('loading').remove();
+
+document.querySelectorAll('[data-view]').forEach(b => b.addEventListener('click', () => goView(b.dataset.view)));
+document.getElementById('tgDims').addEventListener('change', e => dims.visible = e.target.checked);
+document.getElementById('tgPerson').addEventListener('change', e => person.visible = e.target.checked);
+document.getElementById('tgNight').addEventListener('change', e => setNight(e.target.checked));
+document.getElementById('hour').addEventListener('input', e => setSun(+e.target.value));
+setSun(12.5);
+
+// ---------- planta (SVG) ----------
+const css = getComputedStyle(document.documentElement);
+function planta() {
+  const k = 24, x0 = -5, z0 = -5, W = (S.lotA + 8) * k, H = (S.lotB + 8) * k;
+  const X = x => ((x - x0) * k).toFixed(1), Z = z => ((z - z0) * k).toFixed(1);
+  const poly = pts => pts.map(p => X(p.x) + ',' + Z(p.z)).join(' ');
+  let s = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Planta do lote com o portal na esquina">`;
+  s += `<rect x="0" y="0" width="${W}" height="${H}" fill="var(--panel)"/>`;
+  s += `<rect x="${X(-5)}" y="${Z(-5)}" width="${W}" height="${5 * k}" fill="#cdb98f" opacity=".55"/>`;
+  s += `<rect x="${X(-5)}" y="${Z(-5)}" width="${5 * k}" height="${H}" fill="#cdb98f" opacity=".55"/>`;
+  s += `<text x="${X(12)}" y="${Z(-2.6)}" font-size="13" fill="var(--muted)" text-anchor="middle" font-family="Lexend">rua · frente de 21 m</text>`;
+  s += `<text transform="translate(${X(-2.6)} ${Z(12)}) rotate(-90)" font-size="13" fill="var(--muted)" text-anchor="middle" font-family="Lexend">rua · frente de 20 m</text>`;
+  s += `<rect x="${X(0)}" y="${Z(0)}" width="${S.lotA * k}" height="${S.lotB * k}" fill="#8fb366" fill-opacity=".28" stroke="var(--fg)" stroke-width="1.5"/>`;
+  s += `<polygon points="${poly([{ x: 0, z: 0 }, { x: S.chamfer, z: 0 }, { x: 0, z: S.chamfer }])}" fill="#d8c79c" fill-opacity=".7"/>`;
+  s += `<line x1="${X(S.chamfer)}" y1="${Z(0)}" x2="${X(0)}" y2="${Z(S.chamfer)}" stroke="var(--fg)" stroke-dasharray="5 4"/>`;
+  // pilares
+  [-S.pillarX, S.pillarX].forEach(sx => {
+    const c = [[-.3, -.3], [.3, -.3], [.3, .3], [-.3, .3]].map(([a, b]) => L2W(sx + a, b));
+    s += `<polygon points="${poly(c)}" fill="${BRAND.leal}"/>`;
+  });
+  const seg = (x1, z1, x2, z2, col, w) => { const a = L2W(x1, z1), b = L2W(x2, z2); return `<line x1="${X(a.x)}" y1="${Z(a.z)}" x2="${X(b.x)}" y2="${Z(b.z)}" stroke="${col}" stroke-width="${w}" stroke-linecap="round"/>`; };
+  s += seg(-S.lintelHalf, -.35, S.lintelHalf, -.35, BRAND.leal, 3) + seg(-S.lintelHalf, .35, S.lintelHalf, .35, BRAND.leal, 3);
+  s += seg(S.head.cx - 1.4, S.head.z, S.head.cx + 1.4, S.head.z, BRAND.ouroEsc, 6);
+  s += seg(S.esc.cx - 1.1, S.esc.z, S.esc.cx + 1.1, S.esc.z, BRAND.conf, 6);
+  // escoras
+  [S.head.cx - 0.6, S.head.cx + 0.5, S.esc.cx - .55, S.esc.cx + .55].forEach(x => s += seg(x, .6, x, 1.85, '#a9853f', 2));
+  // alas
+  const alaPts = (place) => { let o = ''; WA.xs.forEach(x => { const p = place(x, 0, S.wing.line); o += `<line x1="${X(p.x - (place === placeA ? 0 : .4))}" y1="${Z(p.z - (place === placeA ? .4 : 0))}" x2="${X(p.x + (place === placeA ? 0 : .4))}" y2="${Z(p.z + (place === placeA ? .4 : 0))}" stroke="#a9853f" stroke-width="2"/>`; }); return o; };
+  s += `<line x1="${X(S.wing.start)}" y1="${Z(S.wing.line)}" x2="${X(WA.xs.at(-1))}" y2="${Z(S.wing.line)}" stroke="#a9853f" stroke-width="3"/>` + alaPts(placeA);
+  s += `<line x1="${X(S.wing.line)}" y1="${Z(S.wing.start)}" x2="${X(S.wing.line)}" y2="${Z(WA.xs.at(-1))}" stroke="#a9853f" stroke-width="3"/>` + alaPts(placeB);
+  WA.xs.slice(0, 5).forEach((x, i) => {
+    const xm = x + S.wing.step / 2;
+    s += `<circle cx="${X(xm)}" cy="${Z(1)}" r="5" fill="${i % 2 ? BRAND.ouro : BRAND.leal}"/>`;
+    s += `<circle cx="${X(1)}" cy="${Z(xm)}" r="5" fill="${i % 2 ? BRAND.ouro : BRAND.leal}"/>`;
+  });
+  s += `<circle cx="${X(WA.mx)}" cy="${Z(WA.mz)}" r="6" fill="none" stroke="var(--fg)" stroke-width="2"/><circle cx="${X(WB.mz)}" cy="${Z(WB.mx)}" r="6" fill="none" stroke="var(--fg)" stroke-width="2"/>`;
+  s += `<text x="${X(WA.mx)}" y="${Z(WA.mz + 1.1)}" font-size="11" fill="var(--fg)" text-anchor="middle" font-family="Lexend">mastro</text>`;
+  s += `<text x="${X(WB.mz + 1.3)}" y="${Z(WB.mx + .2)}" font-size="11" fill="var(--fg)" font-family="Lexend">mastro</text>`;
+  // pegadas
+  [0.9, 1.7, 2.5, 3.3].forEach((t, i) => { const sd = i % 2 ? .2 : -.2; s += `<circle cx="${X(t * R2 + sd * R2)}" cy="${Z(t * R2 - sd * R2)}" r="3" fill="#a9853f"/>`; });
+  // legendas
+  const lbl = (xl, zl, t, col = 'var(--fg)') => { const p = L2W(xl, zl); return `<text x="${X(p.x)}" y="${Z(p.z)}" font-size="12" fill="${col}" text-anchor="middle" font-family="Lexend" font-weight="500">${t}</text>`; };
+  s += lbl(S.head.cx, 2.6, 'cabeça') + lbl(S.esc.cx, 2.6, 'escudo') + lbl(0, 1.2, 'entrada');
+  // cotas
+  const cota = (x1, z1, x2, z2, t, ox, oz) => {
+    const a = [X(x1 + ox), Z(z1 + oz)], b = [X(x2 + ox), Z(z2 + oz)], mx = (+a[0] + +b[0]) / 2, my = (+a[1] + +b[1]) / 2;
+    const vert = Math.abs(+a[0] - +b[0]) < 1;
+    return `<line x1="${a[0]}" y1="${a[1]}" x2="${b[0]}" y2="${b[1]}" stroke="var(--blue)" stroke-width="1"/>` +
+      `<circle cx="${a[0]}" cy="${a[1]}" r="2.5" fill="var(--blue)"/><circle cx="${b[0]}" cy="${b[1]}" r="2.5" fill="var(--blue)"/>` +
+      `<text ${vert ? `transform="translate(${mx - 6} ${my}) rotate(-90)"` : `x="${mx}" y="${my - 6}"`} font-size="12" fill="var(--blue)" text-anchor="middle" font-family="Lexend" font-weight="600">${t}</text>`;
+  };
+  s += cota(0, S.lotB, S.lotA, S.lotB, '21,00', 0, 1.2) + cota(S.lotA, 0, S.lotA, S.lotB, '20,00', 1.2, 0);
+  s += cota(0, 0, S.chamfer, 0, '6,40', 0, -0.9) + cota(0, 0, 0, S.chamfer, '6,40', -0.9, 0);
+  s += cota(S.wing.start, 0, WA.xs.at(-1), 0, 'ala 7,00', 0, -1.9);
+  const d1 = L2W(-4.525, -0.9), d2 = L2W(4.525, -0.9);
+  s += `<line x1="${X(d1.x)}" y1="${Z(d1.z)}" x2="${X(d2.x)}" y2="${Z(d2.z)}" stroke="var(--blue)"/><text transform="translate(${X((d1.x + d2.x) / 2 - .5)} ${Z((d1.z + d2.z) / 2 - .5)}) rotate(-45)" font-size="12" fill="var(--blue)" text-anchor="middle" font-family="Lexend" font-weight="600">diagonal 9,05</text>`;
+  // norte
+  const nx = 17.5, nz = 4, L = 1.6;
+  s += `<g font-family="Lexend"><line x1="${X(nx)}" y1="${Z(nz)}" x2="${X(nx + northL.x * L)}" y2="${Z(nz + northL.z * L)}" stroke="#D61F2C" stroke-width="3" marker-end="url(#arr)"/><text x="${X(nx + northL.x * (L + .6))}" y="${Z(nz + northL.z * (L + .6))}" fill="#D61F2C" font-size="13" font-weight="600" text-anchor="middle">N</text></g>`;
+  s += `<defs><marker id="arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#D61F2C"/></marker></defs>`;
+  s += `<text x="${X(14)}" y="${Z(14)}" font-size="13" fill="var(--muted)" text-anchor="middle" font-family="Lexend">área das barracas</text>`;
+  return s + '</svg>';
+}
+document.getElementById('planta').innerHTML = planta();
+
+// ---------- elevação frontal (SVG) ----------
+function elevacao() {
+  const k = 60, xmin = -5.3, xmax = 5.4, ymax = 3.6, W = (xmax - xmin) * k, H = (ymax + 0.6) * k;
+  const X = xv => ((xv - xmin) * k).toFixed(1), Yp = y => ((ymax - y) * k).toFixed(1);
+  let s = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Elevação frontal do portal com alturas">`;
+  s += `<rect width="${W}" height="${H}" fill="var(--panel)"/>`;
+  s += `<line x1="0" y1="${Yp(0)}" x2="${W}" y2="${Yp(0)}" stroke="var(--fg)" stroke-width="2"/>`;
+  s += `<line x1="0" y1="${Yp(S.limit)}" x2="${W}" y2="${Yp(S.limit)}" stroke="#D61F2C" stroke-dasharray="8 5"/><text x="${X(-5.2)}" y="${+Yp(S.limit) - 6}" fill="#D61F2C" font-size="13" font-family="Lexend" font-weight="600">limite do manual 3,00 m</text>`;
+  // cabeça (vista frontal: x_vista = -x_local)
+  const hc = -S.head.cx;
+  s += `<path d="M${HEAD.map(([x, y]) => X(hc + x) + ' ' + Yp(y)).join(' L')} Z" fill="${BRAND.ouro}" stroke="${BRAND.leal}" stroke-width="3"/>`;
+  SPOTS.forEach(([x, y]) => { const cx = hc + x; s += `<path d="M${X(cx - .08)} ${Yp(y)} L${X(cx - .08)} ${Yp(y + .16)} A ${.08 * k} ${.08 * k} 0 0 1 ${X(cx + .08)} ${Yp(y + .16)} L${X(cx + .08)} ${Yp(y)} Z" fill="var(--panel)"/>`; });
+  s += `<circle cx="${X(hc + EYE[0])}" cy="${Yp(EYE[1])}" r="${.09 * k}" fill="${BRAND.claro}"/>`;
+  // pilares e lintel
+  [-S.pillarX, S.pillarX].forEach(sx => {
+    s += `<rect x="${X(sx - .3)}" y="${Yp(S.pillarH)}" width="${.6 * k}" height="${S.pillarH * k}" fill="none" stroke="#a9853f" stroke-width="2"/>`;
+    [-.25, .25].forEach(d => s += `<line x1="${X(sx + d)}" y1="${Yp(0)}" x2="${X(sx + d)}" y2="${Yp(S.pillarH)}" stroke="#a9853f" stroke-width="${.095 * k}" stroke-opacity=".75"/>`);
+    [.55, 1.45, 2.25].forEach(y => s += `<line x1="${X(sx - .25)}" y1="${Yp(y)}" x2="${X(sx + .25)}" y2="${Yp(y)}" stroke="#a9853f" stroke-width="3"/>`);
+    [[-.135], [.135]].forEach(([d]) => s += `<rect x="${X(sx + d - .135)}" y="${Yp(.46)}" width="${.27 * k}" height="${.46 * k}" rx="4" fill="#3b82c4" opacity=".8"/>`);
+  });
+  s += `<rect x="${X(-1.7)}" y="${Yp(2.85)}" width="${3.4 * k}" height="${.5 * k}" fill="${BRAND.leal}"/><text x="${X(0)}" y="${+Yp(2.6) + 11}" fill="${BRAND.ouro}" font-size="32" text-anchor="middle" font-family="Fugaz One, Impact">JAGUAR</text>`;
+  // escudo
+  const ec = -S.esc.cx;
+  s += `<circle cx="${X(ec)}" cy="${Yp(S.esc.cy)}" r="${S.esc.r * k}" fill="${BRAND.leal}" stroke="${BRAND.ouro}" stroke-width="3"/><circle cx="${X(ec)}" cy="${Yp(S.esc.cy)}" r="${S.esc.r * .72 * k}" fill="${BRAND.conf}"/>`;
+  s += `<text x="${X(ec)}" y="${Yp(S.esc.cy + .25)}" fill="${BRAND.ouro}" font-size="22" text-anchor="middle" font-family="Fugaz One, Impact">JAGUAR</text>`;
+  ['BH · MG · BRASIL', 'AMC · USeB'].forEach((t, i) => s += `<text x="${X(ec)}" y="${+Yp(S.esc.cy - .05) + i * 18}" fill="#fff" font-size="12" text-anchor="middle" font-family="Lexend" font-weight="600">${t}</text>`);
+  // cotas verticais e horizontais
+  const vc = (x, y1, y2, t) => `<line x1="${X(x)}" y1="${Yp(y1)}" x2="${X(x)}" y2="${Yp(y2)}" stroke="var(--blue)"/><line x1="${+X(x) - 5}" y1="${Yp(y1)}" x2="${+X(x) + 5}" y2="${Yp(y1)}" stroke="var(--blue)"/><line x1="${+X(x) - 5}" y1="${Yp(y2)}" x2="${+X(x) + 5}" y2="${Yp(y2)}" stroke="var(--blue)"/><text transform="translate(${+X(x) - 7} ${(+Yp(y1) + +Yp(y2)) / 2}) rotate(-90)" fill="var(--blue)" font-size="13" text-anchor="middle" font-family="Lexend" font-weight="600">${t}</text>`;
+  const hcota = (x1, x2, y, t) => `<line x1="${X(x1)}" y1="${Yp(y)}" x2="${X(x2)}" y2="${Yp(y)}" stroke="var(--blue)"/><line x1="${X(x1)}" y1="${+Yp(y) - 5}" x2="${X(x1)}" y2="${+Yp(y) + 5}" stroke="var(--blue)"/><line x1="${X(x2)}" y1="${+Yp(y) - 5}" x2="${X(x2)}" y2="${+Yp(y) + 5}" stroke="var(--blue)"/><text x="${(+X(x1) + +X(x2)) / 2}" y="${+Yp(y) - 6}" fill="var(--blue)" font-size="13" text-anchor="middle" font-family="Lexend" font-weight="600">${t}</text>`;
+  s += vc(hc - 1.55, 0, S.head.h, '2,95');
+  s += vc(-0.35, 0, S.clearH, 'livre 2,30');
+  s += vc(2.0, 0, S.pillarH, '2,90');
+  s += vc(ec + 1.3, 0, S.esc.cy + S.esc.r, '2,85');
+  s += hcota(-1.2, 1.2, 1.2, 'vão 2,40');
+  s += hcota(-1.8, 1.8, 3.25, 'lintel 3,60');
+  s += hcota(hc - 1.4, hc + 1.4, -0.35, 'cabeça 2,80');
+  s += hcota(ec - 1.1, ec + 1.1, -0.35, 'escudo Ø 2,20');
+  return s + '</svg>';
+}
+document.getElementById('elevacao').innerHTML = elevacao();
+
+// ---------- materiais ----------
+function cutPlan(pieces, stock) {
+  const bars = [];
+  [...pieces].sort((a, b) => b.len - a.len).forEach(p => {
+    let bar = bars.find(b => b.left >= p.len - 1e-9);
+    if (!bar) { bar = { cuts: [], left: stock }; bars.push(bar); }
+    bar.cuts.push(p); bar.left = round2(bar.left - p.len - 0.01);
+  });
+  return bars;
+}
+const G = BOM.pieces.filter(p => p.cls === 'g'), F = BOM.pieces.filter(p => p.cls === 'f');
+const barsG = cutPlan(G, 6), barsF = cutPlan(F, 3);
+const sum = a => a.reduce((s, p) => s + p.len, 0);
+const lashM = BOM.joints * 3, estaiM = Math.ceil(BOM.estais.reduce((s, e) => s + e.len, 0));
+
+// tabela de peças
+const groups = {};
+BOM.pieces.forEach(p => { const key = p.label + '|' + p.cls + '|' + fmt(p.len); groups[key] = (groups[key] || 0) + 1; });
+document.querySelector('#pieces tbody').innerHTML = Object.entries(groups).map(([k, n]) => {
+  const [l, c, len] = k.split('|');
+  return `<tr><td>${l}</td><td>${c === 'g' ? 'grosso Ø 8–10 cm' : 'fino Ø 4–6 cm'}</td><td class="num">${len} m</td><td class="num">${n}</td></tr>`;
+}).join('');
+document.getElementById('cutsum').textContent =
+  `Bambu grosso: ${G.length} peças, ${fmt(sum(G), 1)} m, cabem em ${barsG.length} varas de 6 m. ` +
+  `Bambu fino: ${F.length} peças, ${fmt(sum(F), 1)} m, cabem em ${barsF.length} varas de 3 m. ` +
+  `As sobras viram as rodelas das pegadas (${BOM.rodelas} rodelas).`;
+document.getElementById('cuts').innerHTML =
+  barsG.map((b, i) => `<li>Grossa ${i + 1} (6 m): ${b.cuts.map(c => fmt(c.len)).join(' + ')} · sobra ${fmt(Math.max(0, b.left))}</li>`).join('') +
+  barsF.map((b, i) => `<li>Fina ${i + 1} (3 m): ${b.cuts.map(c => fmt(c.len)).join(' + ')} · sobra ${fmt(Math.max(0, b.left))}</li>`).join('');
+
+const ITEMS = [
+  { id: 'bg', name: 'Vara de bambu grosso tratado, 6 m, Ø 8–10 cm', qty: barsG.length, price: 45, src: 'est' },
+  { id: 'bf', name: 'Vara de bambu fino, 3 m, Ø 4–6 cm', qty: barsF.length, price: 10, src: 'est', note: 'mossô de 3 m, Ø 10–17 cm, sai por R$ 20–25 a unidade' },
+  { id: 's6', name: `Corda de sisal 6 mm, rolo de 220 m (amarras: ${BOM.joints} amarras × 3 m = ${lashM} m)`, qty: Math.ceil(lashM / 220), price: 150, src: 'est' },
+  { id: 's10', name: `Corda de sisal 10 mm, rolo de 220 m (estais: ${BOM.estais.length} estais, ${estaiM} m)`, qty: Math.ceil(estaiM / 220), price: 319.9, src: 'pes' },
+  { id: 'cp', name: 'Compensado resinado 10 mm, chapa 2,20 × 1,60 m (cabeça 3, escudo 2, placa 1, totens 2)', qty: 8, price: 130, src: 'est' },
+  { id: 'gl', name: 'Bombona de 20 L com tampa (lastro com água, no lugar de cavar)', qty: BOM.galoes, price: 35, src: 'est' },
+  { id: 'et', name: 'Estaca de madeira 40 cm para os estais', qty: BOM.estais.length + 2, price: 5, src: 'est' },
+  { id: 'ta', name: 'Tinta acrílica para área externa, 3,6 L (azul leal e amarelo ouro)', qty: 2, price: 120, src: 'est' },
+  { id: 'tb', name: 'Tinta acrílica 0,9 L (branco e azul claro, para letras e pintas)', qty: 2, price: 45, src: 'est' },
+  { id: 'vz', name: 'Verniz para área externa, 0,9 L (placas e bambu)', qty: 2, price: 55, src: 'est' },
+  { id: 'pr', name: 'Kit de fixação: parafuso, porca e arruela das placas', qty: 1, price: 80, src: 'est' },
+  { id: 'ab', name: 'Abraçadeira de nylon, pacote com 100 (reforço das amarras)', qty: 2, price: 30, src: 'est' },
+  { id: 'pc', name: 'Rolo, pincel e lixa', qty: 1, price: 60, src: 'est' },
+  { id: 'ld', name: 'Cordão de LED solar, 10 m (contorno da cabeça e placa)', qty: 4, price: 55, src: 'est' },
+  { id: 'le', name: 'LED azul a pilha para o olho', qty: 2, price: 15, src: 'est' }
+];
+const tbody = document.querySelector('#budget tbody');
+tbody.innerHTML = ITEMS.map(it => `<tr><td>${it.name}<span class="tag ${it.src}">${it.src === 'pes' ? 'pesquisado' : 'estimativa'}</span>${it.note ? `<div class="note">Referência: ${it.note}.</div>` : ''}</td>` +
+  `<td class="num">${it.qty}</td><td class="num"><input class="price" id="price-${it.id}" type="number" min="0" step="0.5" value="${it.price}" aria-label="Preço unitário de ${it.name}"></td><td class="num" id="sub-${it.id}"></td></tr>`).join('');
+function recalc() {
+  let total = 0;
+  ITEMS.forEach(it => { const p = parseFloat(document.getElementById('price-' + it.id).value) || 0; const sub = p * it.qty; total += sub; document.getElementById('sub-' + it.id).textContent = brl(sub); });
+  document.getElementById('total').textContent = brl(total);
+  document.getElementById('stat-total').textContent = brl(Math.round(total / 10) * 10).replace(/,00$/, '');
+}
+tbody.addEventListener('input', recalc);
+
+// ---------- números do topo ----------
+const longest = Math.max(...BOM.pieces.map(p => p.len));
+document.getElementById('stats').innerHTML = [
+  ['2,95 m', 'ponto mais alto (limite 3,00 m)'],
+  ['2,40 × 2,30 m', 'passagem livre da entrada'],
+  ['9,05 + 2 × 7 m', 'diagonal mais as duas alas'],
+  [fmt(longest) + ' m', 'peça mais longa no caminhão'],
+  [String(BOM.galoes), 'bombonas de lastro, zero buracos'],
+  ['<span id="stat-total">…</span>', 'orçamento com material novo']
+].map(([b, s]) => `<div class="stat"><b>${b}</b><span>${s}</span></div>`).join('');
+recalc();
+
+// ---------- regras ----------
+const RULES = [
+  ['ok', 'Altura máxima de 3 m para portal de clube: o ponto mais alto é a orelha da cabeça, com 2,95 m. Os mastros têm 3,00 m.'],
+  ['ok', 'Sem buracos na área: os pilares, a cabeça e o escudo ficam em pé com bombonas de água e escoras. As alas são cavaletes em X, que param em pé sozinhos.'],
+  ['att', 'Os estais usam estaca de madeira, como as das barracas. Confirmar com a regional se estaca conta como buraco; se contar, troca-se por mais bombonas.'],
+  ['ok', 'Material reciclável: bambu, compensado (madeira legal), sisal. As pegadas são rodelas tiradas das sobras do corte.'],
+  ['ok', 'Identificação completa no escudo: nome do clube, Belo Horizonte, MG, Brasil, Associação Mineira Central e União Sudeste Brasileira.'],
+  ['ok', 'Mastros para as bandeiras dos Desbravadores e do clube, um na ponta de cada ala.'],
+  ['ok', 'Sem energia elétrica: a luz é de LED solar e a pilha.'],
+  ['ok', 'Desmontagem e volta no caminhão: tudo é amarrado ou parafusado, nada é colado.'],
+  ['att', 'Estais e pés das escoras ficam na pracinha e atrás das placas: sinalizar com fita colorida, como o manual pede para as cordas das barracas.'],
+  ['att', 'Concurso de portal (50 pontos): criatividade e tema, estética e complexidade. O tema "Sempre Desbravador" aparece no escudo e nas 10 unidades nos totens.']
+];
+document.getElementById('rules').innerHTML = RULES.map(([k, t]) => `<li><span class="mark ${k}">${k === 'ok' ? '✓' : '!'}</span><span>${t}</span></li>`).join('');
+})();
+</script>
