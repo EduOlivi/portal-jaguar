@@ -56,8 +56,8 @@
 
     // ---------- o jaguar de costelas (corpo ao longo de +X, cabeça em +X) ----------
     let skinMat = null, eyeMat = null, inner = null;
-    function jaguar(parent, s) {
-      const J = new THREE.Group(); J.scale.setScalar(1); parent.add(J);
+    function jaguar(parent, s, o = {}) {
+      const J = new THREE.Group(); J.scale.set(1, o.ky || 1, 1); parent.add(J);
       const body = t => ({ X: -4.4 + 8.3 * t, yc: 3.05 + 0.95 * t + 0.25 * Math.sin(Math.PI * t), ry: 0.45 + 0.35 * Math.sin(Math.PI * (0.15 + 0.75 * t)) });
       const ST = [];
       for (let i = 0; i <= 22; i++) { const b = body(i / 22); ST.push([b.X, b.yc, b.ry, 0.15 + 0.75 * b.ry]); }
@@ -99,7 +99,7 @@
         leg([[-3.7, 2.75], [-2.9, 1.45], [-4.0, 0.7], [-4.45, 0.02]], z);
       });
       // rabo que sobe e vira mastro da bandeira do clube
-      const tail = [[-4.4, 3.05], [-4.95, 3.3], [-5.3, 3.85], [-5.35, 4.5], [-5.15, 5.05], [-4.85, 5.35]].map(([X, y]) => P(X, y, 0));
+      const tail = (o.tailUp ? [[-4.4, 3.05], [-4.7, 3.45], [-4.8, 4.0], [-4.6, 4.5], [-4.25, 4.8], [-3.9, 4.95]] : [[-4.4, 3.05], [-4.95, 3.3], [-5.3, 3.85], [-5.35, 4.5], [-5.15, 5.05], [-4.85, 5.35]]).map(([X, y]) => P(X, y, 0));
       for (let i = 0; i < tail.length - 1; i++) rod(J, tail[i], tail[i + 1], 0.07 * s * (1 - i * 0.12), gold, 'g', 'Rabo', BRAND.ouro);
       const tip = tail[tail.length - 1]; rod(J, tip, tip.clone().setY(tip.y + 1.0 * s), 0.02, ctx.bambooMat, 'f', 'Mastro no rabo', '#a9853f');
       if (ctx.flagTex) { const fl = new THREE.Mesh(new THREE.PlaneGeometry(0.9 * s, 0.6 * s), mat(0xffffff, { map: ctx.flagTex, side: THREE.DoubleSide, roughness: 0.9 })); fl.position.set(tip.x + 0.47 * s, tip.y + 0.68 * s, 0); fl.castShadow = true; J.add(fl); }
@@ -133,9 +133,9 @@
         bom.joints += 3;
       });
       [-3.3, 3.3].forEach(x => {
-        rod(parent, v(x, 0.05, -1.1), v(x, 0.05, 1.1), 0.05, ctx.bambooMat, 'g', 'Ômega · base do pé', '#a9853f');
-        [[-0.25, -0.8], [0.25, -0.8], [-0.25, 0.8], [0.25, 0.8]].forEach(([dx, dz]) => galao(parent, x + dx, dz));
-        [-1, 1].forEach(sd => rod(parent, v(x * 0.8, 1.4, sd * Zf), v(x, 0.05, sd * 1.1), 0.045, ctx.bambooMat, 'g', 'Ômega · escora do pé', '#a9853f'));
+        rod(parent, v(x, 0.05, -0.95), v(x, 0.05, 1.1), 0.05, ctx.bambooMat, 'g', 'Ômega · base do pé', '#a9853f');
+        [[-0.25, -0.65], [0.25, -0.65], [-0.25, 0.8], [0.25, 0.8]].forEach(([dx, dz]) => galao(parent, x + dx, dz));
+        [-1, 1].forEach(sd => rod(parent, v(x * 0.8, 1.4, sd * Zf), v(x, 0.05, sd > 0 ? 1.1 : -0.95), 0.045, ctx.bambooMat, 'g', 'Ômega · escora do pé', '#a9853f'));
       });
       // escudo como pedra de fecho, no alto do anel
       disc(parent, v(0, cy + R + 0.5, -Zf - 0.08), 0.75, Math.PI);
@@ -149,8 +149,9 @@
     if (kind === 'salto') { const j = jaguar(root, 1); belly = j.belly; }
     else {
       ringInfo = omega(root);
-      const holder = new THREE.Group(); holder.rotation.y = Math.PI / 2; holder.position.z = 0.8; root.add(holder);
-      const j = jaguar(holder, 0.85); belly = j.belly;
+      const holder = new THREE.Group(); holder.rotation.y = Math.PI / 2; holder.position.z = -0.32; root.add(holder);
+      // cabe entre a pracinha da esquina e o começo da praça: rabo enrolado pra cima e corpo esticado na altura
+      const j = jaguar(holder, 0.66, { ky: 1.3, tailUp: true }); belly = j.belly * 1.3;
     }
 
     // coordenadas de todos os segmentos no referencial do grupo raiz (para a elevação)

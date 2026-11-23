@@ -1288,7 +1288,7 @@ editor(); refresh(); recalc(); setSun(10); applyVer();
     ['att', 'Tecido e LED: tecido antichama, fita de LED de 12 V com fonte fechada e confirmar com a organização se a área do clube tem ponto de energia.'],
     ['att', 'Montagem: o anel sai de BH em 4 trechos de treliça, emendados no chão e levantados de uma vez com as 8 pessoas e cordas guia. Os arcos do jaguar são envergados com antecedência.'],
     ['ok', 'Sem buraco no chão: pés do Ômega e patas do jaguar em bombonas de água.'],
-    ['ok', 'O jaguar ocupa o corredor de entrada, que já é livre de barracas: o sonho não tira nenhuma barraca.']
+    ['ok', 'O jaguar fica no corredor de entrada e para antes da praça: as patas de trás e o rabo, enrolado pra cima, terminam antes da tenda. O sonho não tira nenhuma barraca.']
   ];
   $('rulesSonho').innerHTML = RS.map(([kq, t]) => `<li><span class="mark ${kq}">${kq === 'ok' ? '✓' : '!'}</span><span>${t}</span></li>`).join('');
   const REFS = [
@@ -1301,5 +1301,6 @@ editor(); refresh(); recalc(); setSun(10); applyVer();
 }
 $('loading').remove(); requestAnimationFrame(loop);
 window.__camp = () => ({ placed: L.tents.length, need: L.need, cap: L.cap, over: L.over, bs: L.bs });
+window.__sonho = () => { let maxA = 0, minIn = 99; const p = new THREE.Vector3(); dreamG.updateMatrixWorld(true); dreamG.traverse(o => { if (!o.isMesh) return; const pos = o.geometry.attributes.position; for (let i = 0; i < pos.count; i++) { p.fromBufferAttribute(pos, i).applyMatrix4(o.matrixWorld); const ab = W2AB(p.x, p.z); maxA = Math.max(maxA, ab.a); if (p.y < 2.4) minIn = Math.min(minIn, p.x, p.z); } }); return { maxA, minIn, pracaComeca: PRACA.a - PRACA.half }; };
 })();
 </script>
