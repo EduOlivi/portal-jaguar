@@ -143,6 +143,11 @@ footer { font-size: 12px; color: var(--muted); }
   <section class="viewer" aria-label="Modelo 3D da área de acampamento">
     <div id="stage"><div id="loading">Montando o acampamento…</div><div class="hint">Arraste para girar · role ou pince para aproximar</div></div>
     <div class="toolbar">
+      <div class="group" role="group" aria-label="Versão do portal">
+        <span class="eyebrow">Versão</span>
+        <button class="chip" data-ver="atual" aria-pressed="true">Atual</button>
+        <button class="chip" data-ver="sonho" aria-pressed="false">Sonho</button>
+      </div>
       <div class="group" role="group" aria-label="Rua do portal">
         <span class="eyebrow">Portal na</span>
         <button class="chip" data-frame="A" aria-pressed="true">Rua de 21 m</button>
@@ -179,6 +184,24 @@ footer { font-size: 12px; color: var(--muted); }
         <div class="specs" id="specs"></div>
       </div>
       <figure class="sheet" style="margin:0"><h3>Elevação, vista da rua</h3><div class="scroll" id="elevacao"></div></figure>
+    </div>
+  </section>
+
+  <section class="block" aria-labelledby="h-sonho">
+    <h2 id="h-sonho">Versão sonho: o Jaguar Lanterna</h2>
+    <p class="note">Aqui a gente sonhou sem o limite de 3 m do manual. Aperte <b>Sonho</b> no 3D e ligue a <b>Noite</b> para ver aceso. Depois a gente regula e volta pra vida real.</p>
+    <div class="two">
+      <div class="sheet concept">
+        <p><b>O jaguar sai do papel e vira bicho de verdade.</b> Em vez de uma silhueta chapada, um corpo em volume, feito de arcos de bambu rachado dourados ligados por costelas azuis, como as grandes estruturas de bambu dos festivais de arte. Ele está no meio do salto: as patas de trás empurram o chão, as da frente já vão pousando, e quem entra no acampamento passa por baixo da barriga.</p>
+        <p>Por cima dos arcos vai um tecido amarelo translúcido. De dia ele quase some e o desenho dos arcos aparece contra o céu. À noite uma luz dentro do corpo acende e o jaguar inteiro vira uma lanterna gigante, com uma onda de luz correndo do rabo até a cabeça e os olhos azuis acesos. Do drone, é a única coisa brilhando no setor.</p>
+        <p>As 10 unidades continuam sendo as pintas, agora dos dois lados do corpo: quem está na rua e quem está dentro do acampamento vê o nome da sua unidade. O escudo vira a medalha no ombro, a placa JAGUAR fica pendurada na barriga e o rabo sobe em curva e vira o mastro da bandeira do clube.</p>
+        <div class="specs" id="specsSonho"></div>
+      </div>
+      <figure class="sheet" style="margin:0"><h3>Elevação do sonho, vista da rua</h3><div class="scroll" id="elevSonho"></div></figure>
+    </div>
+    <div class="two" style="margin-top:18px">
+      <div class="sheet"><h3>O que ajustar quando voltarmos pra vida real</h3><ul class="rules" id="rulesSonho"></ul></div>
+      <div class="sheet"><h3>De onde veio a ideia</h3><ul class="rules" id="refsSonho"></ul></div>
     </div>
   </section>
 
@@ -280,6 +303,7 @@ footer { font-size: 12px; color: var(--muted); }
 
 <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/controls/OrbitControls.js"></script>
+<script src="sonho.js"></script>
 <script>
 (async function () {
 'use strict';
@@ -347,17 +371,19 @@ const DEFAULT_GROUPS = [
 ];
 const UNIT_GROUPS = DEFAULT_GROUPS.filter(g => !g.lead);
 const STORE = 'jaguar-salto-v1';
-let state = { frame: 'A', groups: DEFAULT_GROUPS.map(g => ({ ...g })), tent: { w: 2.27, d: 2.40, h: 1.5, gap: 0.4, rope: 0.4 } };
+let state = { ver: 'atual', frame: 'A', groups: DEFAULT_GROUPS.map(g => ({ ...g })), tent: { w: 2.27, d: 2.40, h: 1.5, gap: 0.4, rope: 0.4 } };
 try {
   const saved = JSON.parse(localStorage.getItem(STORE) || 'null');
   if (saved && saved.groups) {
     saved.groups.forEach(sg => { const g = state.groups.find(x => x.id === sg.id); if (g) { g.side = sg.side; g.n = sg.n; } });
     if (saved.tent) Object.assign(state.tent, saved.tent);
     if (saved.frame === 'A' || saved.frame === 'B') state.frame = saved.frame;
+    if (saved.ver === 'sonho') state.ver = 'sonho';
   }
 } catch (e) {}
-const save = () => { try { localStorage.setItem(STORE, JSON.stringify({ frame: state.frame, groups: state.groups.map(({ id, side, n }) => ({ id, side, n })), tent: state.tent })); } catch (e) {} };
+const save = () => { try { localStorage.setItem(STORE, JSON.stringify({ ver: state.ver, frame: state.frame, groups: state.groups.map(({ id, side, n }) => ({ id, side, n })), tent: state.tent })); } catch (e) {} };
 F = FRAMES[state.frame];
+if (location.hash === '#sonho') state.ver = 'sonho';
 
 // ================= o que fica fixo na frente (em u, w) =================
 const uc = () => F.L / 2;
@@ -473,7 +499,7 @@ function panelTex(title, color) { return canvasTex(400, 300, (g, w) => { g.fillS
 const TEX = { brasil: flagTex('brasil'), dbv: flagTex('dbv'), clube: flagTex('clube'), nos: panelTex('QUADRO DE NÓS', '#5a3c1e'), hist: panelTex('NOSSA HISTÓRIA', BRAND.leal) };
 
 // ================= site (depende da rua do portal) =================
-let site = null, tenda = null, leds = null, eyeMat = null, glow1 = null, glow2 = null, AREA = null;
+let site = null, PORTAL = null, DREAM = null, DS = null, tenda = null, leds = null, eyeMat = null, glow1 = null, glow2 = null, AREA = null;
 function fgroup(parent, u, w) { const g = new THREE.Group(); const p = F2W(u, w); g.position.set(p.x, 0, p.z); g.rotation.y = F.rotY; parent.add(g); return g; }
 const CELL = 0.25, GX = Math.ceil(LOT.A / CELL) + 1, GZ = Math.ceil(LOT.B / CELL) + 1, BLOCK = new Uint8Array(GX * GZ);
 function buildSite() {
@@ -481,7 +507,7 @@ function buildSite() {
   site = new THREE.Group(); scene.add(site); resetBOM(); AREA = { demarcM: 0 };
   const c = uc();
   // ---------- portal ----------
-  const P = fgroup(site, c, PW);
+  const P = fgroup(site, c, PW); PORTAL = P;
   const VX = X => -X;
   const goldSlat = mat(BRAND.ouro, { roughness: 0.5 });
   SLATS.forEach(s => bamboo(P, v(VX(s.X), s.y0, 0), v(VX(s.X), s.y1, 0), 'm', 'Portal · ripa vertical', goldSlat, 0.038));
@@ -512,6 +538,8 @@ function buildSite() {
   const ledMat = new THREE.MeshBasicMaterial({ color: 0xffd36a }), ledGeo = new THREE.SphereGeometry(0.022, 6, 6);
   const top = JAG.slice(13, 27).map(([X, Y]) => v(VX(X), Y + 0.02, -0.04));
   for (let i = 0; i < top.length - 1; i++) { const a = top[i], b = top[i + 1], n = Math.max(1, Math.round(a.distanceTo(b) / 0.13)); for (let k = 0; k < n; k++) { const m = new THREE.Mesh(ledGeo, ledMat); m.position.lerpVectors(a, b, k / n); leds.add(m); } }
+  DS = Sonho.build('salto', { THREE, BRAND, bambooMat, escTex, flagTex: TEX.clube, nameTex, units: UNIT_GROUPS });
+  DREAM = fgroup(site, c, PW); DS.group.rotation.y = Math.PI; DREAM.add(DS.group);
   glow1 = new THREE.PointLight(0xffc35a, 0, 8); const g1 = F2W(c, PW - 1.5); glow1.position.set(g1.x, 2.4, g1.z); site.add(glow1);
   // ---------- praça ----------
   const pc = (PRACA.w0 + PRACA.w1) / 2;
@@ -668,14 +696,14 @@ function setSun(hour) {
   if (night) { scene.background = new THREE.Color(0x0a1530); hemi.intensity = 0.12; scene.fog = new THREE.Fog(0x0a1530, 30, 100); }
   else { const c = new THREE.Color(0xf3b27a).lerp(new THREE.Color(0x9cc6e8), day); scene.background = c; scene.fog = new THREE.Fog(c, 55, 140); hemi.intensity = 0.35 + 0.35 * day; }
 }
-function setNight(on) { night = on; if (leds) leds.visible = on; if (glow1) glow1.intensity = on ? 1.5 : 0; if (glow2) glow2.intensity = on ? 1.1 : 0; if (eyeMat) { eyeMat.emissive.set(on ? 0x31b5ff : 0x000000); eyeMat.emissiveIntensity = on ? 1.8 : 0; } setSun(+$('hour').value); }
+function setNight(on) { night = on; if (DS) DS.setNight(on); if (leds) leds.visible = on; if (glow1) glow1.intensity = on ? 1.5 : 0; if (glow2) glow2.intensity = on ? 1.1 : 0; if (eyeMat) { eyeMat.emissive.set(on ? 0x31b5ff : 0x000000); eyeMat.emissiveIntensity = on ? 1.8 : 0; } setSun(+$('hour').value); }
 
 // ================= câmeras =================
 const fv = (u, y, w) => { const p = F2W(u, w); return v(p.x, y, p.z); };
-function views() { const c = uc(); return {
+function views() { const c = uc(), dr = state.ver === 'sonho'; return {
   area: { pos: fv(c - 2, 17, -11), tgt: fv(c, 0, F.D / 2) },
-  portal: { pos: fv(c + 1.5, 1.7, -7.5), tgt: fv(c, 1.5, PW) },
-  lado: { pos: fv(c - 9, 2.2, -3), tgt: fv(c, 1.4, PW) },
+  portal: dr ? { pos: fv(c + 2.5, 2.2, -11), tgt: fv(c, 3.0, PW) } : { pos: fv(c + 1.5, 1.7, -7.5), tgt: fv(c, 1.5, PW) },
+  lado: dr ? { pos: fv(c - 12, 3.0, -4), tgt: fv(c, 3.0, PW) } : { pos: fv(c - 9, 2.2, -3), tgt: fv(c, 1.4, PW) },
   topo: { pos: fv(c + 0.05, 42, F.D / 2 - 0.05), tgt: fv(c, 0, F.D / 2) },
   pedestre: { pos: fv(c, 1.6, -4.5), tgt: fv(c, 1.6, 8) }
 }; }
@@ -691,6 +719,7 @@ function resize() { const w = stage.clientWidth, h = stage.clientHeight; rendere
 new ResizeObserver(resize).observe(stage); resize();
 function loop(now) {
   if (anim) { const kq = reduce ? 1 : Math.min(1, (now - anim.t0) / 750), e = kq < .5 ? 2 * kq * kq : 1 - Math.pow(-2 * kq + 2, 2) / 2; camera.position.lerpVectors(anim.p0, anim.p1, e); controls.target.lerpVectors(anim.q0, anim.q1, e); if (kq >= 1) anim = null; }
+  if (DS && state.ver === 'sonho') DS.tick(now);
   controls.update(); renderer.render(scene, camera); requestAnimationFrame(loop);
 }
 
@@ -962,8 +991,15 @@ function refresh() {
 function setFrame(key) {
   state.frame = key; F = FRAMES[key]; save();
   document.querySelectorAll('[data-frame]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.frame === key)));
-  buildSite(); setNight(night); materials(); refresh(); goView(curView, true);
+  buildSite(); applyVer(); setNight(night); materials(); refresh(); goView(curView, true);
 }
+function applyVer() {
+  const dr = state.ver === 'sonho';
+  if (PORTAL) PORTAL.visible = !dr; if (DREAM) DREAM.visible = dr; if (glow1) glow1.visible = !dr;
+  document.querySelectorAll('[data-ver]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.ver === state.ver)));
+}
+function setVer(ver) { state.ver = ver; save(); applyVer(); if (ver === 'sonho') goView('portal'); }
+document.querySelectorAll('[data-ver]').forEach(b => b.addEventListener('click', () => setVer(b.dataset.ver)));
 document.querySelectorAll('[data-frame]').forEach(b => b.addEventListener('click', () => setFrame(b.dataset.frame)));
 document.querySelectorAll('[data-view]').forEach(b => b.addEventListener('click', () => goView(b.dataset.view)));
 $('tgTenda').addEventListener('change', e => { if (tenda) tenda.visible = e.target.checked; drawMaps(); });
@@ -971,6 +1007,26 @@ $('tgNight').addEventListener('change', e => setNight(e.target.checked));
 $('hour').addEventListener('input', e => setSun(+e.target.value));
 const T0 = state.tent; $('tw').value = T0.w; $('td').value = T0.d; $('th').value = T0.h; $('tg').value = T0.gap; $('tr').value = T0.rope;
 editor(); setFrame(state.frame); setSun(9.5);
+{ const sp = DS.specs, m = n => fmt(n, 2) + ' m';
+  $('specsSonho').innerHTML = [['ponto mais alto', m(sp.altura)], ['comprimento', m(sp.largura)], ['vão livre embaixo da barriga', m(sp.vao)], ['bambu rachado (arcos)', fmt(sp.metrosR, 0) + ' m'], ['bambu grosso (pernas e rabo)', fmt(sp.metrosG, 0) + ' m'], ['fita de LED', fmt(sp.ledM, 0) + ' m'], ['tecido translúcido', '≈ ' + fmt(sp.tecidoM2, 0) + ' m²'], ['amarras', String(sp.amarras)]].map(([t, b]) => `<div><b>${b}</b>${t}</div>`).join('');
+  $('elevSonho').innerHTML = Sonho.elevation(DS, p => [p.x, p.y], { label: 'Elevação do Jaguar Lanterna, vista da rua' });
+  const RS = [
+    ['att', `Altura: o sonho chega a ${fmt(sp.altura, 1)} m e o manual limita o portal a 3 m. Caminhos: pedir uma exceção à regional, ou abaixar o jaguar (agachado, pronto para o salto) e entrar pelo lado dele em vez de por baixo.`],
+    ['att', 'Vão de quase 7 m entre as patas sem apoio no meio: na vida real o corpo precisa de uma treliça escondida dentro dele ou de um cabo de aço da cabeça ao rabo. Vale chamar alguém que entenda de estrutura.'],
+    ['att', 'Tecido e LED: tecido antichama, fita de LED de 12 V com fonte fechada e confirmar com a organização se a área do clube tem ponto de energia (o manual só fala da tomada da cozinha).'],
+    ['att', 'Montagem: arcos de bambu rachado precisam ser envergados com antecedência. O corpo sai de BH em módulos de 1,5 m, numerados, e só é amarrado no lote.'],
+    ['ok', 'Sem buraco no chão: continua igual, com patas em bombonas de água e estais nas estacas.'],
+    ['ok', 'Cabe na mesma faixa de 2 m na frente do lote: o sonho não tira nenhuma barraca.']
+  ];
+  $('rulesSonho').innerHTML = RS.map(([kq, t]) => `<li><span class="mark ${kq}">${kq === 'ok' ? '✓' : '!'}</span><span>${t}</span></li>`).join('');
+  const REFS = [
+    ['https://www.designboom.com/art/thousands-hand-split-bamboo-strands-curved-tunnel-cave-urban-sydney-what-we-leave-behind-07-31-2025/', 'Cave Urban, Festival de Sydney', 'túnel de 40 m com 500 varas de bambu rachado: o corpo de arcos do jaguar.'],
+    ['https://festival.si.edu/storied-objects/flower-plaque', 'Portal de bambu do Festival Smithsonian', 'portal de três andares amarrado à mão por cinco artesãos: prova de que bambu e amarra chegam lá.'],
+    ['https://www.domusweb.it/en/news/2011/09/17/forest-pavilion.html', 'Forest Pavilion, Taiwan', 'abóbadas de bambu verde que funcionam como portais: luz passando entre as varas.'],
+    ['https://scoutpioneering.com/tag/gateway', 'Portais de pioneiria dos jamborees', 'torres e portais só com amarras e estais, sem buraco.']
+  ];
+  $('refsSonho').innerHTML = REFS.map(([u, t, d]) => `<li><span class="mark ok">→</span><span><a href="${u}" target="_blank" rel="noopener">${t}</a>: ${d}</span></li>`).join('');
+}
 $('loading').remove(); requestAnimationFrame(loop);
 window.__camp = () => ({ placed: L.tents.length, need: L.need, cap: L.cap, over: L.over, bs: L.bs, slats: SLATS.length, spots: SPOTS.length, stringers: STRINGERS.length });
 })();
