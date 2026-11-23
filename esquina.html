@@ -141,6 +141,11 @@ footer { font-size: 12px; color: var(--muted); }
   <section class="viewer" aria-label="Modelo 3D da área de acampamento">
     <div id="stage"><div id="loading">Montando o acampamento…</div><div class="hint">Arraste para girar · role ou pince para aproximar</div></div>
     <div class="toolbar">
+      <div class="group" role="group" aria-label="Versão do portal">
+        <span class="eyebrow">Versão</span>
+        <button class="chip" data-ver="atual" aria-pressed="true">Atual</button>
+        <button class="chip" data-ver="sonho" aria-pressed="false">Sonho</button>
+      </div>
       <div class="group" role="group" aria-label="Vistas">
         <span class="eyebrow">Vista</span>
         <button class="chip" data-view="area" aria-pressed="true">Área toda</button>
@@ -161,6 +166,24 @@ footer { font-size: 12px; color: var(--muted); }
         <input type="range" id="hour" min="6" max="18.5" step="0.25" value="10">
         <span id="sunlabel"></span>
       </div>
+    </div>
+  </section>
+
+  <section class="block" aria-labelledby="h-sonho">
+    <h2 id="h-sonho">Versão sonho: o Salto pelo Ômega</h2>
+    <p class="note">Aqui a gente sonhou sem o limite de 3 m do manual. Aperte <b>Sonho</b> no 3D e ligue a <b>Noite</b> para ver aceso. Depois a gente regula e volta pra vida real.</p>
+    <div class="two">
+      <div class="sheet concept">
+        <p><b>A edição é Ômega, então o portal é um Ω gigante.</b> Na diagonal da esquina sobe um anel azul em treliça de bambu, com os pés abertos como a letra, apoiados em bombonas. No alto, como pedra de fecho, o escudo do clube.</p>
+        <p>E o jaguar pula através do Ômega. O corpo em volume, de arcos dourados cobertos de tecido translúcido, atravessa o anel em pleno salto: as patas de trás ficam dentro do acampamento e as da frente já pousam na pracinha da esquina, com a cara virada para quem chega pelas duas ruas. Quem entra passa por baixo da barriga e por dentro do anel.</p>
+        <p>As 10 unidades são as pintas em volta do anel, cinco de cada lado. À noite o anel e o jaguar acendem: o Ω desenhado em luz e o jaguar virando lanterna, com a onda de luz correndo do rabo até a cabeça.</p>
+        <div class="specs" id="specsSonho"></div>
+      </div>
+      <figure class="sheet" style="margin:0"><h3>Elevação do sonho, vista da esquina</h3><div class="scroll" id="elevSonho"></div></figure>
+    </div>
+    <div class="two" style="margin-top:18px">
+      <div class="sheet"><h3>O que ajustar quando voltarmos pra vida real</h3><ul class="rules" id="rulesSonho"></ul></div>
+      <div class="sheet"><h3>De onde veio a ideia</h3><ul class="rules" id="refsSonho"></ul></div>
     </div>
   </section>
 
@@ -281,6 +304,7 @@ footer { font-size: 12px; color: var(--muted); }
 
 <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/controls/OrbitControls.js"></script>
+<script src="sonho.js"></script>
 <script>
 (async function () {
 'use strict';
@@ -598,6 +622,11 @@ const escTex = canvasTex(1024, 1024, (g, w) => {
 const disc = new THREE.Mesh(new THREE.CircleGeometry(S.esc.r, 72), mat(0xffffff, { map: escTex })); disc.position.set(0, S.esc.cy, 0.012); disc.castShadow = true; esc.add(disc);
 const discBack = new THREE.Mesh(new THREE.CircleGeometry(S.esc.r, 72), lealM); discBack.rotation.y = Math.PI; discBack.position.set(0, S.esc.cy, 0); discBack.castShadow = true; esc.add(discBack);
 const rim = new THREE.Mesh(new THREE.TorusGeometry(S.esc.r, 0.025, 8, 72), mat(BRAND.ouro)); rim.position.set(0, S.esc.cy, 0.006); esc.add(rim);
+// ---------- versão sonho: o Ômega com o jaguar pulando através ----------
+const DS = Sonho.build('omega', { THREE, BRAND, bambooMat, escTex, flagTex: flagTex('clube'), nameTex, units: state.groups.filter(g => !g.lead) });
+const dreamG = new THREE.Group(); dreamG.position.copy(portal.position); dreamG.rotation.y = Math.PI / 4; dreamG.add(DS.group); scene.add(dreamG);
+let VER = 'atual'; try { if (localStorage.getItem('jaguar-esquina-ver') === 'sonho') VER = 'sonho'; } catch (e) {}
+if (location.hash === '#sonho') VER = 'sonho';
 [-0.55, 0.55].forEach(px => {
   bamboo(esc, v(px, 0, -0.06), v(px, 2.5, -0.06), 'g', 'Escudo · poste');
   bamboo(esc, v(px, 2.0, -0.1), v(px, 0, -1.2), 'g', 'Escudo · escora');
@@ -845,6 +874,7 @@ function setSun(hour) {
   else { const c = new THREE.Color(0xf3b27a).lerp(new THREE.Color(0x9cc6e8), day); scene.background = c; scene.fog = new THREE.Fog(c, 55, 140); hemi.intensity = 0.35 + 0.35 * day; }
 }
 function setNight(on) {
+  DS.setNight(on);
   night = on; leds.visible = boardLed.visible = on; glow1.intensity = on ? 1.4 : 0; glow2.intensity = on ? 1.1 : 0;
   eye.material.emissive.set(on ? 0x31b5ff : 0x000000); eye.material.emissiveIntensity = on ? 1.6 : 0;
   setSun(+$('hour').value);
@@ -854,6 +884,7 @@ function setNight(on) {
 const VIEWS = {
   area: { pos: v(-9, 17, -9), tgt: v(10, 0, 9.5) },
   esquina: { pos: v(-7.5, 4.6, -7.5), tgt: v(4, 1.3, 4) },
+  sonho: { pos: v(-10.5, 4.0, -2.5), tgt: v(3.4, 3.0, 3.8) },
   ruaA: { pos: v(10, 1.8, -8), tgt: v(9, 1, 5) },
   ruaB: { pos: v(-8, 1.8, 10), tgt: v(5, 1, 9) },
   topo: { pos: v(10.6, 42, 10.1), tgt: v(10.5, 0, 10) },
@@ -861,7 +892,7 @@ const VIEWS = {
 };
 let anim = null;
 function goView(name) {
-  const V = VIEWS[name]; anim = { t0: performance.now(), p0: camera.position.clone(), q0: controls.target.clone(), p1: V.pos, q1: V.tgt };
+  const V = VIEWS[name === 'esquina' && VER === 'sonho' ? 'sonho' : name]; anim = { t0: performance.now(), p0: camera.position.clone(), q0: controls.target.clone(), p1: V.pos, q1: V.tgt };
   document.querySelectorAll('[data-view]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.view === name)));
 }
 camera.position.copy(VIEWS.area.pos); controls.target.copy(VIEWS.area.tgt);
@@ -870,10 +901,18 @@ function resize() { const w = stage.clientWidth, h = stage.clientHeight; rendere
 new ResizeObserver(resize).observe(stage); resize();
 function loop(now) {
   if (anim) { const k = reduce ? 1 : Math.min(1, (now - anim.t0) / 750), e = k < .5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2; camera.position.lerpVectors(anim.p0, anim.p1, e); controls.target.lerpVectors(anim.q0, anim.q1, e); if (k >= 1) anim = null; }
+  if (VER === 'sonho') DS.tick(now);
   controls.update(); renderer.render(scene, camera); requestAnimationFrame(loop);
 }
 document.querySelectorAll('[data-view]').forEach(b => b.addEventListener('click', () => goView(b.dataset.view)));
-$('tgDims').addEventListener('change', e => dims.visible = e.target.checked);
+$('tgDims').addEventListener('change', e => dims.visible = e.target.checked && VER === 'atual');
+function applyVer() {
+  const dr = VER === 'sonho';
+  portal.visible = !dr; dreamG.visible = dr; glow1.visible = !dr; dims.visible = !dr && $('tgDims').checked;
+  document.querySelectorAll('[data-ver]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.ver === VER)));
+}
+function setVer(ver) { VER = ver; try { localStorage.setItem('jaguar-esquina-ver', ver); } catch (e) {} applyVer(); if (ver === 'sonho') goView('esquina'); }
+document.querySelectorAll('[data-ver]').forEach(b => b.addEventListener('click', () => setVer(b.dataset.ver)));
 $('tgTenda').addEventListener('change', e => { tenda.visible = e.target.checked; drawMaps(); });
 $('tgNight').addEventListener('change', e => setNight(e.target.checked));
 $('hour').addEventListener('input', e => setSun(+e.target.value));
@@ -1239,7 +1278,27 @@ $('elevacao').innerHTML = elevacao();
 
 // ================= início =================
 $('tw').value = fmt(state.tent.w).replace(',', '.'); $('td').value = fmt(state.tent.d).replace(',', '.'); $('th').value = fmt(state.tent.h).replace(',', '.'); $('tg').value = fmt(state.tent.gap || 0.4).replace(',', '.'); $('tr').value = fmt(state.tent.rope || 0.4).replace(',', '.');
-editor(); refresh(); recalc(); setSun(10);
+editor(); refresh(); recalc(); setSun(10); applyVer();
+{ const sp = DS.specs, m = n => fmt(n, 2) + ' m';
+  $('specsSonho').innerHTML = [['ponto mais alto', m(sp.altura)], ['largura do Ômega', m(sp.largura)], ['vão livre embaixo da barriga', m(sp.vao)], ['bambu grosso (anel, pernas)', fmt(sp.metrosG, 0) + ' m'], ['bambu rachado (arcos)', fmt(sp.metrosR, 0) + ' m'], ['fita de LED', fmt(sp.ledM, 0) + ' m'], ['tecido translúcido', '≈ ' + fmt(sp.tecidoM2, 0) + ' m²'], ['amarras', String(sp.amarras)]].map(([t, b]) => `<div><b>${b}</b>${t}</div>`).join('');
+  $('elevSonho').innerHTML = Sonho.elevation(DS, p => [-p.x, p.y], { label: 'Elevação do Ômega com o jaguar, vista da esquina' });
+  const RS = [
+    ['att', `Altura: o anel chega a ${fmt(sp.altura, 1)} m e o manual limita o portal a 3 m. Caminhos: pedir exceção à regional, ou fazer um Ômega de 3 m com o jaguar saltando por cima dele, deitado ao longo da diagonal.`],
+    ['att', 'O jaguar atravessando o anel: na vida real ele pode se apoiar no próprio Ômega no meio do corpo, o que resolve o vão sem apoio. O anel em treliça precisa de estais para os dois lados.'],
+    ['att', 'Tecido e LED: tecido antichama, fita de LED de 12 V com fonte fechada e confirmar com a organização se a área do clube tem ponto de energia.'],
+    ['att', 'Montagem: o anel sai de BH em 4 trechos de treliça, emendados no chão e levantados de uma vez com as 8 pessoas e cordas guia. Os arcos do jaguar são envergados com antecedência.'],
+    ['ok', 'Sem buraco no chão: pés do Ômega e patas do jaguar em bombonas de água.'],
+    ['ok', 'O jaguar ocupa o corredor de entrada, que já é livre de barracas: o sonho não tira nenhuma barraca.']
+  ];
+  $('rulesSonho').innerHTML = RS.map(([kq, t]) => `<li><span class="mark ${kq}">${kq === 'ok' ? '✓' : '!'}</span><span>${t}</span></li>`).join('');
+  const REFS = [
+    ['https://www.designboom.com/art/thousands-hand-split-bamboo-strands-curved-tunnel-cave-urban-sydney-what-we-leave-behind-07-31-2025/', 'Cave Urban, Festival de Sydney', 'túnel de 40 m com 500 varas de bambu rachado: o corpo de arcos do jaguar.'],
+    ['https://festival.si.edu/storied-objects/flower-plaque', 'Portal de bambu do Festival Smithsonian', 'portal de três andares amarrado à mão por cinco artesãos.'],
+    ['https://www.domusweb.it/en/news/2011/09/17/forest-pavilion.html', 'Forest Pavilion, Taiwan', 'abóbadas de bambu que funcionam como portais.'],
+    ['https://scoutpioneering.com/tag/gateway', 'Portais de pioneiria dos jamborees', 'torres e portais só com amarras e estais, sem buraco.']
+  ];
+  $('refsSonho').innerHTML = REFS.map(([u, t, d]) => `<li><span class="mark ok">→</span><span><a href="${u}" target="_blank" rel="noopener">${t}</a>: ${d}</span></li>`).join('');
+}
 $('loading').remove(); requestAnimationFrame(loop);
 window.__camp = () => ({ placed: L.tents.length, need: L.need, cap: L.cap, over: L.over, bs: L.bs });
 })();
