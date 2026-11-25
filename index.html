@@ -239,6 +239,7 @@ footer { font-size: 12px; color: var(--muted); }
     <h2 id="h-planta">Planta técnica</h2>
     <p class="note">Medidas em metros a partir da esquina: <b>x</b> ao longo da rua de 21 m e <b>y</b> ao longo da rua de 20 m. No campo, é só esticar duas trenas a partir da esquina e marcar o centro de cada barraca pela tabela.</p>
     <div class="sheet"><div class="scroll" id="planta"></div></div>
+    <div class="sheet" id="fileirasBox"><h3>Fileiras</h3><p class="note">Cada fileira é um retângulo no chão: estique a trena da esquina, marque os quatro cantos com estaca e fita, e arme as barracas encostadas, começando pela ponta da frente.</p><div class="scroll"><table id="fileiras"><thead><tr><th>Nº</th><th>Lado</th><th>Grupos</th><th class="num">x (m)</th><th class="num">y (m)</th><th class="num">Barracas</th><th>Porta virada para</th></tr></thead><tbody></tbody></table></div></div>
     <div class="sheet"><h3>Marcação das barracas</h3><div class="scroll"><table id="marks"><thead><tr><th>Nº</th><th>Grupo</th><th class="num">x (m)</th><th class="num">y (m)</th><th>Porta virada para</th></tr></thead><tbody></tbody></table></div></div>
   </section>
 
@@ -648,7 +649,7 @@ function layoutCorr() {
   const rows = [], corridors = [];
   for (let k = 0; k < m; k++) {
     const u0 = EDGE + off + k * (mod + bg);
-    rows.push({ ua: u0, ub: u0 + T.d, du: 1 }, { ua: u0 + T.d + C, ub: u0 + 2 * T.d + C, du: -1 });
+    rows.push({ ua: u0, ub: u0 + T.d, du: 1, k }, { ua: u0 + T.d + C, ub: u0 + 2 * T.d + C, du: -1, k });
     corridors.push({ ua: u0 + T.d, ub: u0 + T.d + C, rows: [rows.length - 2, rows.length - 1] });
   }
   rows.forEach((r, ri) => {
@@ -899,7 +900,45 @@ function planta() {
   s += cota(fx(c - 4.62, -0.8), fx(c + 4.66, -0.8), 'portal 9,28') + cota(fx(0, -2.8), fx(c - 4.62, -2.8), fmt(c - 4.62));
   s += cota(fx(c - 2, PRACA.w1 + 1.3), fx(c + 2, PRACA.w1 + 1.3), 'praça 4,00');
   const t0 = L.tents[0]; if (t0) { const f = tentFoot(t0, T); s += cota([sx(t0.x - f.w / 2), sz(t0.z + f.d / 2 + 0.3)], [sx(t0.x + f.w / 2), sz(t0.z + f.d / 2 + 0.3)], fmt(f.w)) + cota([sx(t0.x + f.w / 2 + 0.25), sz(t0.z - f.d / 2)], [sx(t0.x + f.w / 2 + 0.25), sz(t0.z + f.d / 2)], fmt(f.d)); }
+  if (L.corr) s += cotasCorr(cota, ink, dim);
   return s + '</svg>';
+}
+// cotas do arranjo em corredores: cadeia de larguras no fundo, início de cada fileira, praça, mastros e varais
+function cotasCorr(cota, ink, dim) {
+  const K = L.corr, T = L.T, c = uc(); let s = '';
+  // cota com texto deslocado (para trechos curtos)
+  const cotaF = (u0, w0, u1, w1, t, lift = 0) => { const a = fx(u0, w0), b = fx(u1, w1), mx = (a[0] + b[0]) / 2, my = (a[1] + b[1]) / 2, vert = Math.abs(a[0] - b[0]) < 1, tick = (p) => vert ? `<line x1="${p[0] - 5}" y1="${p[1]}" x2="${p[0] + 5}" y2="${p[1]}" stroke="${dim}"/>` : `<line x1="${p[0]}" y1="${p[1] - 5}" x2="${p[0]}" y2="${p[1] + 5}" stroke="${dim}"/>`;
+    return `<line x1="${a[0]}" y1="${a[1]}" x2="${b[0]}" y2="${b[1]}" stroke="${dim}"/>${tick(a)}${tick(b)}<text ${vert ? `transform="translate(${mx + 14 + lift} ${my}) rotate(-90)"` : `x="${mx}" y="${my + 16 + lift}"`} font-size="11" fill="${dim}" text-anchor="middle" font-weight="600">${t}</text>`; };
+  // 1) cadeia de larguras no fundo do lote
+  const wb = F.D + 1.0, segs = []; let u = 0;
+  const push = (to, t) => { if (to - u > 0.01) segs.push([u, to, t]); u = to; };
+  K.rows.forEach((r, i) => { push(r.ua, i === 0 ? 'borda' : (i % 2 ? 'corredor' : 'fundos')); push(r.ub, 'fileira'); });
+  push(F.L, 'borda');
+  segs.forEach(([a, b, kind], i) => { s += cotaF(a, wb, b, wb, fmt(b - a), (b - a) < 1 && i % 2 ? 12 : 0); });
+  s += cotaF(0, wb + 1.3, F.L, wb + 1.3, `lote ${fmt(F.L)} · fileira ${fmt(T.d)} · corredor ${fmt(K.C)} · fundos ${fmt(K.bg)}`);
+  // 2) distância da frente do lote até a primeira barraca de cada fileira
+  K.corridors.forEach((cr, i) => { if (cr.wb > cr.wa) { const p = fx((cr.ua + cr.ub) / 2, cr.wb - 0.6); s += `<text x="${p[0]}" y="${p[1]}" font-size="11" fill="var(--gold-ink)" text-anchor="middle" font-weight="700">C${i + 1}</text>`; } });
+  K.rows.forEach(r => { const st = r.slots.length ? Math.min(...r.slots.map(t => t.w)) - T.w / 2 : null; if (st && st > 0.5) { const um = (r.ua + r.ub) / 2; s += cotaF(um, 0, um, st, fmt(st)); } });
+  // 3) praça: distância da frente e profundidade; mastros
+  s += cotaF(c + 2.6, 0, c + 2.6, PRACA.w0, fmt(PRACA.w0)) + cotaF(c + 2.6, PRACA.w0, c + 2.6, PRACA.w1, 'praça ' + fmt(PRACA.w1 - PRACA.w0));
+  s += cotaF(c - 1.3, PRACA.w1 + 0.95, c, PRACA.w1 + 0.95, '1,30') + cotaF(c, PRACA.w1 + 0.95, c + 1.3, PRACA.w1 + 0.95, '1,30');
+  // 4) varais: comprimento e distância da lateral
+  const [v0, v1] = AREA.varais.M; s += cotaF(v0, F.D - 0.5 - 0.35, v1, F.D - 0.5 - 0.35, 'varal ' + fmt(v1 - v0)) + cotaF(0, F.D - 0.5 - 0.35, v0, F.D - 0.5 - 0.35, fmt(v0));
+  // 5) folga lateral entre barracas
+  const r0 = K.rows.find(r => r.slots.length > 1); if (r0) { const a = r0.slots[0].w + T.w / 2, b = r0.slots[1].w - T.w / 2, p = fx(r0.ub + 0.35, (a + b) / 2); s += `<text x="${p[0]}" y="${p[1] + 4}" font-size="11" fill="${dim}" font-weight="600">folga ${fmt(b - a)}</text>`; }
+  return s;
+}
+// tabela das fileiras, em x e y a partir da esquina
+function fileirasTable() {
+  const K = L.corr; if (!K) return '';
+  const T = L.T, DOOR_TO = { '-z': 'rua de 21 m', '+z': 'fundos', '-x': 'rua de 20 m', '+x': 'vizinho (Petrel)' };
+  return K.rows.map((r, i) => {
+    if (!r.slots.length) return '';
+    const w0 = Math.min(...r.slots.map(t => t.w)) - T.w / 2, w1 = Math.max(...r.slots.map(t => t.w)) + T.w / 2, A = F2W(r.ua, w0), B = F2W(r.ub, w1);
+    const ts = L.tents.filter(t => t.row === i), sides = [...new Set(ts.map(t => t.g.side))].map(sd => sd === 'M' ? 'meninos' : 'meninas').join(' e ') || 'vaga';
+    const grp = [...new Set(ts.map(t => t.g.name))].join(', ') || '—';
+    return `<tr><td>${i + 1}</td><td>${sides}</td><td>${grp}</td><td class="num">${fmt(Math.min(A.x, B.x))} a ${fmt(Math.max(A.x, B.x))}</td><td class="num">${fmt(Math.min(A.z, B.z))} a ${fmt(Math.max(A.z, B.z))}</td><td class="num">${ts.length} de ${r.slots.length}</td><td>corredor ${r.k + 1}</td></tr>`;
+  }).join('');
 }
 function elevacao() {
   const kk = 62, xmin = -5.9, xmax = 5.9, ymax = 3.55, Wd = (xmax - xmin) * kk, Hd = (ymax + 0.75) * kk;
@@ -1060,7 +1099,8 @@ function refresh() {
   if (L.over.M + L.over.F === 0) { st.className = K && K.mixed ? 'status bad' : 'status ok'; st.textContent = `Cabem as ${total} barracas: ${L.need.M} do lado dos meninos e ${L.need.F} do lado das meninas. Sobram ${L.cap.M - L.need.M + L.cap.F - L.need.F} vagas.` + kTxt; }
   else { st.className = 'status bad'; st.textContent = `Cabem ${L.tents.length} das ${total}: ficaram de fora ${L.over.M} dos meninos e ${L.over.F} das meninas. Dá para diminuir a folga entre barracas, levar menos barracas ou trocar uma unidade de lado.` + kTxt; }
   const DOOR_TO = { '-z': 'rua de 21 m', '+z': 'fundos', '-x': 'rua de 20 m', '+x': 'vizinho (Petrel)' };
-  $('marks').querySelector('tbody').innerHTML = L.tents.map(t => `<tr><td>${t.num}</td><td><span class="swatch" style="background:${t.g.color}"></span>${t.g.name}</td><td class="num">${fmt(t.x)}</td><td class="num">${fmt(t.z)}</td><td>${DOOR_TO[faceT(t)]}</td></tr>`).join('');
+  $('fileirasBox').style.display = L.corr ? '' : 'none'; $('fileiras').querySelector('tbody').innerHTML = fileirasTable();
+  $('marks').querySelector('tbody').innerHTML = L.tents.map(t => `<tr><td>${t.num}</td><td><span class="swatch" style="background:${t.g.color}"></span>${t.g.name}</td><td class="num">${fmt(t.x)}</td><td class="num">${fmt(t.z)}</td><td>${L.corr ? 'corredor ' + (L.corr.rows[t.row].k + 1) : DOOR_TO[faceT(t)]}</td></tr>`).join('');
   stats();
 }
 function setFrame(key) {
