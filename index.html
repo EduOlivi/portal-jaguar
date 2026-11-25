@@ -161,6 +161,11 @@ footer { font-size: 12px; color: var(--muted); }
         <button class="chip" data-view="topo" aria-pressed="false">Drone</button>
         <button class="chip" data-view="pedestre" aria-pressed="false">Entrando</button>
       </div>
+      <div class="group" role="group" aria-label="Arranjo das barracas">
+        <span class="eyebrow">Barracas</span>
+        <button class="chip" data-arr="corr" aria-pressed="true">Corredores</button>
+        <button class="chip" data-arr="livre" aria-pressed="false">Soltas</button>
+      </div>
       <div class="group" role="group" aria-label="Camadas">
         <span class="eyebrow">Mostrar</span>
         <label class="chip"><input type="checkbox" id="tgTenda" checked>Tenda (sugestão)</label>
@@ -207,15 +212,17 @@ footer { font-size: 12px; color: var(--muted); }
 
   <section class="block" aria-labelledby="h-sim">
     <h2 id="h-sim">Barracas por unidade</h2>
-    <p class="note">Mude o lado, a quantidade de barracas ou as medidas da canadense e o 3D, o mapa e a planta se reorganizam. Meninos e meninas ficam separados por um corredor de 0,80 m que vai da praça até o fundo e se desloca para dar espaço ao lado que tem mais barracas. O lado de cada unidade foi um palpite pelo nome; confiram.</p>
+    <p class="note" id="simNote"></p>
     <div class="sheet">
       <div class="dims">
         <span>Barraca canadense:</span>
         <label>largura <input class="small" type="number" id="tw" min="1.4" max="3.5" step="0.01" value="2.27"> m</label>
         <label>comprimento <input class="small" type="number" id="td" min="1.4" max="4" step="0.01" value="2.40"> m</label>
         <label>altura <input class="small" type="number" id="th" min="1" max="2.2" step="0.05" value="1.50"> m</label>
-        <label>folga entre barracas <input class="small" type="number" id="tg" min="0.2" max="1.5" step="0.05" value="0.40"> m</label>
-        <label>corda na frente e atrás <input class="small" type="number" id="tr" min="0.2" max="1.2" step="0.05" value="0.40"> m</label>
+        <label data-only="livre">folga entre barracas <input class="small" type="number" id="tg" min="0.2" max="1.5" step="0.05" value="0.40"> m</label>
+        <label data-only="livre">corda na frente e atrás <input class="small" type="number" id="tr" min="0.2" max="1.2" step="0.05" value="0.40"> m</label>
+        <label data-only="corr">folga do lado <input class="small" type="number" id="tl" min="0" max="1" step="0.05" value="0.05"> m</label>
+        <label data-only="corr">corredor entre as portas <input class="small" type="number" id="tc" min="0.8" max="3" step="0.1" value="1.5"> m</label>
       </div>
       <div class="scroll" style="margin-top:12px"><table id="units"><thead><tr><th>Grupo</th><th>Lado</th><th class="num">Barracas</th><th>Lugar</th></tr></thead><tbody></tbody>
       <tfoot><tr><td>Total</td><td></td><td class="num" id="tentTotal"></td><td></td></tr></tfoot></table></div>
@@ -371,7 +378,7 @@ const DEFAULT_GROUPS = [
 ];
 const UNIT_GROUPS = DEFAULT_GROUPS.filter(g => !g.lead);
 const STORE = 'jaguar-salto-v1';
-let state = { ver: 'atual', frame: 'A', groups: DEFAULT_GROUPS.map(g => ({ ...g })), tent: { w: 2.27, d: 2.40, h: 1.5, gap: 0.4, rope: 0.4 } };
+let state = { ver: 'atual', frame: 'A', arr: 'corr', groups: DEFAULT_GROUPS.map(g => ({ ...g })), tent: { w: 2.27, d: 2.40, h: 1.5, gap: 0.4, rope: 0.4, lat: 0.05, corr: 1.5 } };
 try {
   const saved = JSON.parse(localStorage.getItem(STORE) || 'null');
   if (saved && saved.groups) {
@@ -379,9 +386,10 @@ try {
     if (saved.tent) Object.assign(state.tent, saved.tent);
     if (saved.frame === 'A' || saved.frame === 'B') state.frame = saved.frame;
     if (saved.ver === 'sonho') state.ver = 'sonho';
+    if (saved.arr === 'livre') state.arr = 'livre';
   }
 } catch (e) {}
-const save = () => { try { localStorage.setItem(STORE, JSON.stringify({ ver: state.ver, frame: state.frame, groups: state.groups.map(({ id, side, n }) => ({ id, side, n })), tent: state.tent })); } catch (e) {} };
+const save = () => { try { localStorage.setItem(STORE, JSON.stringify({ ver: state.ver, frame: state.frame, arr: state.arr, groups: state.groups.map(({ id, side, n }) => ({ id, side, n })), tent: state.tent })); } catch (e) {} };
 F = FRAMES[state.frame];
 if (location.hash === '#sonho') state.ver = 'sonho';
 
@@ -626,7 +634,50 @@ function sideSlots(side, bs, T) {
   }
   return best;
 }
+// ---------- corredores: fileiras encostadas, portas viradas uma para a outra ----------
+const faceOf = (du) => { const x = F.U.x * du, z = F.U.z * du; return Math.abs(x) > Math.abs(z) ? (x > 0 ? '+x' : '-x') : (z > 0 ? '+z' : '-z'); };
+function layoutCorr() {
+  ROPE = state.tent.rope || 0.4;
+  const T = state.tent, lat = Math.max(0, T.lat ?? 0.05), C = Math.max(0.8, T.corr || 1.5), need = { M: 0, F: 0 };
+  state.groups.forEach(g => need[g.side] += g.n);
+  // módulo = fileira + corredor + fileira; entre módulos, os fundos ficam a 0,20–0,50 m
+  const avail = F.L - 2 * EDGE, mod = 2 * T.d + C;
+  let m = Math.max(1, Math.floor((avail + 0.2) / (mod + 0.2)));
+  const bg = m > 1 ? Math.min(0.5, (avail - m * mod) / (m - 1)) : 0, off = (avail - m * mod - (m - 1) * bg) / 2;
+  const fits = (ua, ub, wa, wb) => { for (let u = ua + 0.01; u <= ub - 0.01 + 1e-9; u += Math.min(0.2, (ub - ua - 0.02) / 2)) for (let w = wa + 0.01; w <= wb - 0.01 + 1e-9; w += Math.min(0.2, (wb - wa - 0.02) / 2)) if (blockedF(u, w)) return false; return true; };
+  const rows = [], corridors = [];
+  for (let k = 0; k < m; k++) {
+    const u0 = EDGE + off + k * (mod + bg);
+    rows.push({ ua: u0, ub: u0 + T.d, du: 1 }, { ua: u0 + T.d + C, ub: u0 + 2 * T.d + C, du: -1 });
+    corridors.push({ ua: u0 + T.d, ub: u0 + T.d + C, rows: [rows.length - 2, rows.length - 1] });
+  }
+  rows.forEach((r, ri) => {
+    r.slots = []; let w = EDGE;
+    while (w + T.w <= F.D - EDGE + 1e-9) {
+      if (fits(r.ua, r.ub, w, w + T.w)) {
+        const u = (r.ua + r.ub) / 2, wc = w + T.w / 2, p = F2W(u, wc), face = faceOf(r.du);
+        r.slots.push({ x: p.x, z: p.z, u, w: wc, rot: face[1] === 'x' ? 'x' : 'z', face, row: ri }); w += T.w + lat;
+      } else w += 0.05;
+    }
+  });
+  corridors.forEach(cr => { const s = cr.rows.flatMap(i => rows[i].slots); cr.wa = s.length ? Math.min(...s.map(t => t.w)) - T.w / 2 : 0; cr.wb = s.length ? Math.max(...s.map(t => t.w)) + T.w / 2 : 0; });
+  // meninos enchem a partir da esquerda, meninas a partir da direita, fileira por fileira
+  const ordM = rows.flatMap(r => r.slots), ordF = rows.slice().reverse().flatMap(r => r.slots), used = new Set();
+  const tents = [], over = { M: 0, F: 0 };
+  ['M', 'F'].forEach(side => {
+    const ord = side === 'M' ? ordM : ordF; let i = 0;
+    const gs = [...state.groups.filter(g => g.side === side && !g.back), ...state.groups.filter(g => g.side === side && g.back)];
+    gs.forEach(g => { for (let kq = 0; kq < g.n; kq++) { while (i < ord.length && used.has(ord[i])) i++; if (i < ord.length) { used.add(ord[i]); tents.push({ ...ord[i], g }); i++; } else over[side]++; } });
+  });
+  const order = state.groups.map(g => g.id);
+  tents.sort((p, q) => order.indexOf(p.g.id) - order.indexOf(q.g.id) || p.row - q.row || p.w - q.w);
+  tents.forEach((t, i) => t.num = i + 1);
+  const total = rows.reduce((s, r) => s + r.slots.length, 0);
+  const mixed = rows.filter((r, ri) => { const sd = new Set(tents.filter(t => t.row === ri).map(t => t.g.side)); return sd.size > 1; }).length;
+  return { tents, bs: 0, cap: { M: total - need.F, F: need.F }, need, over, T: { ...T }, corr: { rows, corridors, C, lat, bg, mixed, total } };
+}
 function layout() {
+  if (state.arr === 'corr') return layoutCorr();
   GAP = state.tent.gap || 0.4; ROPE = state.tent.rope || 0.4;
   const T = state.tent, need = { M: 0, F: 0 }; state.groups.forEach(g => need[g.side] += g.n);
   let best = null;
@@ -653,7 +704,9 @@ function layout() {
 
 // ================= barracas em 3D =================
 const camp = new THREE.Group(); scene.add(camp);
-const tentFoot = (t, T) => t.rot === 'x' ? { w: T.d, d: T.w, fx: -1, fz: 0 } : { w: T.w, d: T.d, fx: 0, fz: -1 };
+const FACE = { '-z': [0, -1, 0], '+z': [0, 1, Math.PI], '-x': [-1, 0, Math.PI / 2], '+x': [1, 0, -Math.PI / 2] };
+const faceT = t => t.face || (t.rot === 'x' ? '-x' : '-z');
+const tentFoot = (t, T) => { const [fx, fz] = FACE[faceT(t)]; return fx ? { w: T.d, d: T.w, fx, fz } : { w: T.w, d: T.d, fx, fz }; };
 function plaquePos(t, T) { const f = tentFoot(t, T), reach = T.d / 2 + 0.55, px = t.x + f.fx * reach, pz = t.z + f.fz * reach, sxv = f.fz !== 0 ? 1 : 0, szv = f.fx !== 0 ? 1 : 0; return { px: px - sxv * 0.45, pz: pz - szv * 0.45, bx: px + sxv * 0.55, bz: pz + szv * 0.55, fx: f.fx, fz: f.fz }; }
 const TENT_BLUE = 0x2182BF, TENT_YELLOW = 0xFFB217;
 function tentMesh(t, T, color) {
@@ -666,12 +719,20 @@ function tentMesh(t, T, color) {
   const door = new THREE.Mesh(new THREE.ShapeGeometry(new THREE.Shape([new THREE.Vector2(-T.w * 0.22, 0), new THREE.Vector2(T.w * 0.22, 0), new THREE.Vector2(0, T.h * 0.78)])), mat(0x0d1a2c)); door.position.z = -T.d / 2 - 0.005; door.rotation.y = Math.PI; g.add(door);
   cyl(g, v(0, T.h + 0.02, -T.d / 2 - 0.2), v(0, T.h + 0.02, T.d / 2 + 0.2), 0.012, mat(0x333333));
   [-1, 1].forEach(s => cyl(g, v(0, T.h, s * (T.d / 2 + 0.02)), v(0, 0, s * (T.d / 2 + ROPE)), 0.005, ropeMat));
-  g.position.set(t.x, 0, t.z); if (t.rot === 'x') g.rotation.y = Math.PI / 2; return g;
+  g.position.set(t.x, 0, t.z); g.rotation.y = FACE[faceT(t)][2]; return g;
 }
 let L = null;
 function buildCamp() {
   while (camp.children.length) camp.remove(camp.children[0]);
   const T = L.T, firsts = {};
+  if (L.corr) {
+    const sand = mat(0xe3d2a5, { roughness: 1 });
+    L.corr.corridors.forEach(cr => {
+      if (cr.wb <= cr.wa) return;
+      const du = cr.ub - cr.ua, dw = cr.wb - cr.wa, p = F2W((cr.ua + cr.ub) / 2, (cr.wa + cr.wb) / 2), alongX = Math.abs(F.U.x) > 0.5;
+      const m = new THREE.Mesh(new THREE.PlaneGeometry(alongX ? du : dw, alongX ? dw : du), sand); m.rotation.x = -Math.PI / 2; m.position.set(p.x, 0.012, p.z); m.receiveShadow = true; camp.add(m);
+    });
+  }
   L.tents.forEach(t => { camp.add(tentMesh(t, T, t.g.color)); if (!firsts[t.g.id] || t.w < firsts[t.g.id].w) firsts[t.g.id] = t; });
   Object.values(firsts).forEach(t => {
     const q = plaquePos(t, T);
@@ -767,9 +828,13 @@ function mapa() {
   s += `<text x="${sx(-3.6)}" y="${sz(-4.2)}" font-size="13" fill="#6b5a35" text-anchor="middle">esquina</text>`;
   s += `<rect x="${sx(0)}" y="${sz(0)}" width="${LOT.A * k}" height="${LOT.B * k}" fill="url(#grass)"/>`;
   const div = c + L.bs;
+  if (L.corr) {
+    L.corr.corridors.forEach(cr => { if (cr.wb > cr.wa) s += `<polygon points="${rectF(cr.ua, cr.wa, cr.ub, cr.wb)}" fill="#e3d2a5"/>`; });
+  } else {
   s += `<polygon points="${[pf(0, 0), pf(c, 0), pf(c, WDIV), pf(div - 0.4, WDIV), pf(div - 0.4, F.D), pf(0, F.D)].join(' ')}" fill="#2182BF" opacity=".12"/>`;
   s += `<polygon points="${[pf(F.L, 0), pf(c, 0), pf(c, WDIV), pf(div + 0.4, WDIV), pf(div + 0.4, F.D), pf(F.L, F.D)].join(' ')}" fill="#FFB217" opacity=".16"/>`;
   s += `<polygon points="${rectF(div - 0.4, WDIV, div + 0.4, F.D)}" fill="#e3d2a5"/>`;
+  }
   s += `<polygon points="${rectF(c - 0.7, PW + 0.1, c + 0.7, PRACA.w0)}" fill="#e3d2a5"/><polygon points="${rectF(c - 2, PRACA.w0, c + 2, PRACA.w1 + 1)}" fill="#e3d2a5"/>`;
   const lblAt = (u, t, col) => { const p = fx(u, F.D + 1.2); return F.key === 'A' ? `<text x="${p[0]}" y="${p[1] + 6}" font-family="Fugaz One, Impact" font-size="19" fill="${col}" text-anchor="middle">${t}</text>` : `<text x="${p[0] + 6}" y="${p[1]}" font-family="Fugaz One, Impact" font-size="19" fill="${col}" text-anchor="middle" transform="rotate(90 ${p[0] + 6} ${p[1]})">${t}</text>`; };
   s += lblAt(c / 2, 'LADO DOS MENINOS', '#034491') + lblAt(c + c / 2, 'LADO DAS MENINAS', '#8A5A00');
@@ -787,8 +852,10 @@ function mapa() {
   const firsts = {}; L.tents.forEach(t => { if (!firsts[t.g.id] || t.w < firsts[t.g.id].w) firsts[t.g.id] = t; });
   L.tents.forEach(t => {
     const f = tentFoot(t, T), x0 = sx(t.x - f.w / 2), z0 = sz(t.z - f.d / 2), w = f.w * k, d = f.d * k, cx = x0 + w / 2, cz = z0 + d / 2, ink = inkOn(t.g.color);
-    s += `<g filter="url(#sh)"><rect x="${x0}" y="${z0}" width="${w}" height="${d}" rx="3" fill="#FFB217"/>${t.rot === 'x' ? `<rect x="${x0}" y="${z0}" width="${w}" height="${d / 2}" rx="3" fill="#2182BF"/>` : `<rect x="${x0}" y="${z0}" width="${w / 2}" height="${d}" rx="3" fill="#2182BF"/>`}`;
-    s += t.rot === 'x' ? `<line x1="${x0 - 3}" y1="${cz}" x2="${x0 + w + 3}" y2="${cz}" stroke="#0b1a33" stroke-opacity=".35" stroke-width="1.5"/><path d="M${x0} ${cz - 7} L${x0 + 9} ${cz} L${x0} ${cz + 7}" fill="#0d1a2c" opacity=".55"/></g>` : `<line x1="${cx}" y1="${z0 - 3}" x2="${cx}" y2="${z0 + d + 3}" stroke="#0b1a33" stroke-opacity=".35" stroke-width="1.5"/><path d="M${cx - 7} ${z0} L${cx} ${z0 + 9} L${cx + 7} ${z0}" fill="#0d1a2c" opacity=".55"/></g>`;
+    const fc = faceT(t), blue = { '-z': [x0, z0, w / 2, d], '+z': [x0 + w / 2, z0, w / 2, d], '-x': [x0, z0 + d / 2, w, d / 2], '+x': [x0, z0, w, d / 2] }[fc];
+    const door = { '-z': `M${cx - 7} ${z0} L${cx} ${z0 + 9} L${cx + 7} ${z0}`, '+z': `M${cx - 7} ${z0 + d} L${cx} ${z0 + d - 9} L${cx + 7} ${z0 + d}`, '-x': `M${x0} ${cz - 7} L${x0 + 9} ${cz} L${x0} ${cz + 7}`, '+x': `M${x0 + w} ${cz - 7} L${x0 + w - 9} ${cz} L${x0 + w} ${cz + 7}` }[fc];
+    s += `<g filter="url(#sh)"><rect x="${x0}" y="${z0}" width="${w}" height="${d}" rx="3" fill="#FFB217"/><rect x="${blue[0]}" y="${blue[1]}" width="${blue[2]}" height="${blue[3]}" rx="3" fill="#2182BF"/>`;
+    s += (f.fx ? `<line x1="${x0 - 3}" y1="${cz}" x2="${x0 + w + 3}" y2="${cz}" stroke="#0b1a33" stroke-opacity=".35" stroke-width="1.5"/>` : `<line x1="${cx}" y1="${z0 - 3}" x2="${cx}" y2="${z0 + d + 3}" stroke="#0b1a33" stroke-opacity=".35" stroke-width="1.5"/>`) + `<path d="${door}" fill="#0d1a2c" opacity=".55"/></g>`;
     s += `<circle cx="${cx}" cy="${cz}" r="8" fill="${t.g.color}" stroke="#fff" stroke-width="1.5"/><text x="${cx}" y="${cz + 3.5}" font-size="9" text-anchor="middle" fill="${inkOn(t.g.color)}" font-weight="700">${t.num}</text>`;
   });
   Object.values(firsts).forEach(t => {
@@ -817,13 +884,14 @@ function planta() {
   s += `<rect x="${sx(0)}" y="${sz(0)}" width="${LOT.A * k}" height="${LOT.B * k}" fill="none" stroke="${ink}" stroke-width="2"/>`;
   s += portalPlanSVG('var(--fg)');
   s += `<polygon points="${rectF(c - 2, PRACA.w0, c + 2, PRACA.w1)}" fill="none" stroke="${ink}" stroke-width="1.5"/>`;
-  s += `<polygon points="${rectF(c + L.bs - 0.4, WDIV, c + L.bs + 0.4, F.D)}" fill="none" stroke="var(--gold-ink)" stroke-dasharray="4 3"/>`;
+  if (L.corr) L.corr.corridors.forEach(cr => { if (cr.wb > cr.wa) s += `<polygon points="${rectF(cr.ua, cr.wa, cr.ub, cr.wb)}" fill="none" stroke="var(--gold-ink)" stroke-dasharray="4 3"/>`; });
+  else s += `<polygon points="${rectF(c + L.bs - 0.4, WDIV, c + L.bs + 0.4, F.D)}" fill="none" stroke="var(--gold-ink)" stroke-dasharray="4 3"/>`;
   [1.3, 0, -1.3].forEach(du => { const p = fx(c + du, PRACA.w1 + 0.55); s += `<circle cx="${p[0]}" cy="${p[1]}" r="4" fill="none" stroke="${ink}" stroke-width="1.5"/>`; });
   Object.values(AREA.varais).forEach(([u0, u1]) => { const a = fx(u0, F.D - 0.5), b = fx(u1, F.D - 0.5); s += `<line x1="${a[0]}" y1="${a[1]}" x2="${b[0]}" y2="${b[1]}" stroke="${ink}" stroke-width="1.5" stroke-dasharray="2 3"/>`; });
   L.tents.forEach(t => {
     const f = tentFoot(t, T);
     s += `<rect x="${sx(t.x - f.w / 2)}" y="${sz(t.z - f.d / 2)}" width="${f.w * k}" height="${f.d * k}" fill="${t.g.color}" fill-opacity=".18" stroke="${ink}" stroke-width="1.2"/>`;
-    s += t.rot === 'x' ? `<line x1="${sx(t.x - f.w / 2 - ROPE)}" y1="${sz(t.z)}" x2="${sx(t.x + f.w / 2 + ROPE)}" y2="${sz(t.z)}" stroke="var(--muted)" stroke-dasharray="2 2"/>` : `<line x1="${sx(t.x)}" y1="${sz(t.z - f.d / 2 - ROPE)}" x2="${sx(t.x)}" y2="${sz(t.z + f.d / 2 + ROPE)}" stroke="var(--muted)" stroke-dasharray="2 2"/>`;
+    s += f.fx ? `<line x1="${sx(t.x - f.w / 2 - ROPE)}" y1="${sz(t.z)}" x2="${sx(t.x + f.w / 2 + ROPE)}" y2="${sz(t.z)}" stroke="var(--muted)" stroke-dasharray="2 2"/>` : `<line x1="${sx(t.x)}" y1="${sz(t.z - f.d / 2 - ROPE)}" x2="${sx(t.x)}" y2="${sz(t.z + f.d / 2 + ROPE)}" stroke="var(--muted)" stroke-dasharray="2 2"/>`;
     s += `<text x="${sx(t.x)}" y="${sz(t.z) + 4}" font-size="11" text-anchor="middle" fill="${ink}" font-weight="600">${t.num}</text>`;
   });
   const cota = (a, b, t) => { const mx = (a[0] + b[0]) / 2, my = (a[1] + b[1]) / 2, vert = Math.abs(a[0] - b[0]) < 1; return `<line x1="${a[0]}" y1="${a[1]}" x2="${b[0]}" y2="${b[1]}" stroke="${dim}"/><circle cx="${a[0]}" cy="${a[1]}" r="2.5" fill="${dim}"/><circle cx="${b[0]}" cy="${b[1]}" r="2.5" fill="${dim}"/><text ${vert ? `transform="translate(${mx - 6} ${my}) rotate(-90)"` : `x="${mx}" y="${my - 6}"`} font-size="12" fill="${dim}" text-anchor="middle" font-weight="600">${t}</text>`; };
@@ -870,16 +938,21 @@ function plaques() { return state.groups.map(g => `<div class="plaque" style="ba
 
 // ================= editor =================
 function editor() {
-  $('units').querySelector('tbody').innerHTML = state.groups.map(g => `<tr><td><span class="swatch" style="background:${g.color}"></span>${g.name}</td><td><select class="small" id="side-${g.id}" aria-label="Lado de ${g.name}"><option value="M"${g.side === 'M' ? ' selected' : ''}>Meninos</option><option value="F"${g.side === 'F' ? ' selected' : ''}>Meninas</option></select></td><td class="num"><input class="small" type="number" min="0" max="8" step="1" id="n-${g.id}" value="${g.n}" aria-label="Barracas de ${g.name}"></td><td class="note">${g.back ? 'fundo do lote' : 'frente, perto da praça'}</td></tr>`).join('');
+  $('units').querySelector('tbody').innerHTML = state.groups.map(g => `<tr><td><span class="swatch" style="background:${g.color}"></span>${g.name}</td><td><select class="small" id="side-${g.id}" aria-label="Lado de ${g.name}"><option value="M"${g.side === 'M' ? ' selected' : ''}>Meninos</option><option value="F"${g.side === 'F' ? ' selected' : ''}>Meninas</option></select></td><td class="num"><input class="small" type="number" min="0" max="8" step="1" id="n-${g.id}" value="${g.n}" aria-label="Barracas de ${g.name}"></td><td class="note">${state.arr === 'corr' ? (g.back ? 'corredor do meio' : (g.side === 'M' ? 'corredores da esquerda' : 'corredores da direita')) : (g.back ? 'fundo do lote' : 'frente, perto da praça')}</td></tr>`).join('');
+  document.querySelectorAll('[data-only]').forEach(el => el.style.display = el.dataset.only !== state.arr ? 'none' : '');
+  $('simNote').textContent = state.arr === 'corr'
+    ? 'As barracas ficam encostadas lado a lado, em fileiras com as portas viradas uma para a outra, formando corredores que vão da frente até o fundo do lote. Os fundos de duas fileiras vizinhas ficam a poucos centímetros, e as cordas de trás podem dividir a mesma estaca. Os meninos ocupam os corredores da esquerda e as meninas os da direita; as lideranças e o almoxarifado ficam no corredor do meio, que sai da praça. Mude o lado, a quantidade de barracas, a folga do lado ou a largura do corredor e o 3D, o mapa e a planta se reorganizam. O lado de cada unidade foi um palpite pelo nome; confiram.'
+    : 'Mude o lado, a quantidade de barracas ou as medidas da canadense e o 3D, o mapa e a planta se reorganizam. Meninos e meninas ficam separados por um corredor de 0,80 m que vai da praça até o fundo e se desloca para dar espaço ao lado que tem mais barracas. O lado de cada unidade foi um palpite pelo nome; confiram.';
 }
 let timer = null;
 function onEdit() {
   state.groups.forEach(g => { g.side = $('side-' + g.id).value; g.n = Math.max(0, Math.min(8, parseInt($('n-' + g.id).value) || 0)); });
   const T = state.tent; T.w = Math.max(1.4, +$('tw').value || 2.27); T.d = Math.max(1.4, +$('td').value || 2.4); T.h = Math.max(1, +$('th').value || 1.5); T.gap = Math.max(0.2, +$('tg').value || 0.4); T.rope = Math.max(0.2, +$('tr').value || 0.4);
+  T.lat = Math.max(0, Math.min(1, +$('tl').value || 0)); T.corr = Math.max(0.8, Math.min(3, +$('tc').value || 1.5));
   save(); clearTimeout(timer); timer = setTimeout(refresh, 150);
 }
 $('units').addEventListener('change', onEdit); $('units').addEventListener('input', onEdit);
-['tw', 'td', 'th', 'tg', 'tr'].forEach(id => $(id).addEventListener('change', onEdit));
+['tw', 'td', 'th', 'tg', 'tr', 'tl', 'tc'].forEach(id => $(id).addEventListener('change', onEdit));
 
 // ================= materiais =================
 const priceMemo = {}, ownMemo = {};
@@ -983,9 +1056,11 @@ function refresh() {
   $('legend').innerHTML = legend(); $('plaques').innerHTML = plaques();
   const total = L.need.M + L.need.F; $('tentTotal').textContent = total;
   const st = $('status');
-  if (L.over.M + L.over.F === 0) { st.className = 'status ok'; st.textContent = `Cabem as ${total} barracas: ${L.need.M} do lado dos meninos e ${L.need.F} do lado das meninas. Sobram ${L.cap.M - L.need.M + L.cap.F - L.need.F} vagas.`; }
-  else { st.className = 'status bad'; st.textContent = `Cabem ${L.tents.length} das ${total}: ficaram de fora ${L.over.M} dos meninos e ${L.over.F} das meninas. Dá para diminuir a folga entre barracas, levar menos barracas ou trocar uma unidade de lado.`; }
-  $('marks').querySelector('tbody').innerHTML = L.tents.map(t => `<tr><td>${t.num}</td><td><span class="swatch" style="background:${t.g.color}"></span>${t.g.name}</td><td class="num">${fmt(t.x)}</td><td class="num">${fmt(t.z)}</td><td>${t.rot === 'x' ? 'rua de 20 m' : 'rua de 21 m'}</td></tr>`).join('');
+  const K = L.corr, kTxt = K ? ` São ${K.corridors.length} corredores de ${fmt(K.C)} m entre as portas, com ${K.rows.length} fileiras e ${fmt(K.lat)} m entre uma barraca e outra.${K.mixed ? ` Atenção: em ${K.mixed === 1 ? 'uma fileira' : K.mixed + ' fileiras'} há barraca de meninos e de meninas; vale trocar uma unidade de lado.` : ''}` : '';
+  if (L.over.M + L.over.F === 0) { st.className = K && K.mixed ? 'status bad' : 'status ok'; st.textContent = `Cabem as ${total} barracas: ${L.need.M} do lado dos meninos e ${L.need.F} do lado das meninas. Sobram ${L.cap.M - L.need.M + L.cap.F - L.need.F} vagas.` + kTxt; }
+  else { st.className = 'status bad'; st.textContent = `Cabem ${L.tents.length} das ${total}: ficaram de fora ${L.over.M} dos meninos e ${L.over.F} das meninas. Dá para diminuir a folga entre barracas, levar menos barracas ou trocar uma unidade de lado.` + kTxt; }
+  const DOOR_TO = { '-z': 'rua de 21 m', '+z': 'fundos', '-x': 'rua de 20 m', '+x': 'vizinho (Petrel)' };
+  $('marks').querySelector('tbody').innerHTML = L.tents.map(t => `<tr><td>${t.num}</td><td><span class="swatch" style="background:${t.g.color}"></span>${t.g.name}</td><td class="num">${fmt(t.x)}</td><td class="num">${fmt(t.z)}</td><td>${DOOR_TO[faceT(t)]}</td></tr>`).join('');
   stats();
 }
 function setFrame(key) {
@@ -1001,11 +1076,13 @@ function applyVer() {
 function setVer(ver) { state.ver = ver; save(); applyVer(); if (ver === 'sonho') goView('portal'); }
 document.querySelectorAll('[data-ver]').forEach(b => b.addEventListener('click', () => setVer(b.dataset.ver)));
 document.querySelectorAll('[data-frame]').forEach(b => b.addEventListener('click', () => setFrame(b.dataset.frame)));
+function setArr(a) { state.arr = a; save(); document.querySelectorAll('[data-arr]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.arr === a))); editor(); refresh(); }
+document.querySelectorAll('[data-arr]').forEach(b => { b.setAttribute('aria-pressed', String(b.dataset.arr === state.arr)); b.addEventListener('click', () => setArr(b.dataset.arr)); });
 document.querySelectorAll('[data-view]').forEach(b => b.addEventListener('click', () => goView(b.dataset.view)));
 $('tgTenda').addEventListener('change', e => { if (tenda) tenda.visible = e.target.checked; drawMaps(); });
 $('tgNight').addEventListener('change', e => setNight(e.target.checked));
 $('hour').addEventListener('input', e => setSun(+e.target.value));
-const T0 = state.tent; $('tw').value = T0.w; $('td').value = T0.d; $('th').value = T0.h; $('tg').value = T0.gap; $('tr').value = T0.rope;
+const T0 = state.tent; $('tw').value = T0.w; $('td').value = T0.d; $('th').value = T0.h; $('tg').value = T0.gap; $('tr').value = T0.rope; $('tl').value = T0.lat; $('tc').value = T0.corr;
 editor(); setFrame(state.frame); setSun(9.5);
 { const sp = DS.specs, m = n => fmt(n, 2) + ' m';
   $('specsSonho').innerHTML = [['ponto mais alto', m(sp.altura)], ['comprimento', m(sp.largura)], ['vão livre embaixo da barriga', m(sp.vao)], ['bambu rachado (arcos)', fmt(sp.metrosR, 0) + ' m'], ['bambu grosso (pernas e rabo)', fmt(sp.metrosG, 0) + ' m'], ['fita de LED', fmt(sp.ledM, 0) + ' m'], ['tecido translúcido', '≈ ' + fmt(sp.tecidoM2, 0) + ' m²'], ['amarras', String(sp.amarras)]].map(([t, b]) => `<div><b>${b}</b>${t}</div>`).join('');
