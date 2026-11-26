@@ -1,0 +1,1230 @@
+<!doctype html>
+<html lang="pt-BR">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Portal dos Guardiões</title>
+<meta name="description" content="Projeto do portal e da área de acampamento do Clube Jaguar no VI Campori DSA 2027: portal simétrico de bambu e sisal, cerca decorada, praça, lixeiras e 35 barracas em corredores.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fugaz+One&family=Lexend:wght@300;400;500;600&display=swap">
+<style>
+:root {
+  --bg: #F2F5FA; --panel: #FFFFFF; --fg: #0B1A33; --muted: #4E5D78; --line: #D5DDEA;
+  --blue: #034491; --gold: #FFB217; --gold-ink: #8A5A00; --ok: #1E7F4F; --warn: #B4232C;
+  --display: "Fugaz One", "Arial Black", Impact, sans-serif;
+  --body: "Lexend", "Segoe UI", system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #07142A; --panel: #0D1F3D; --fg: #E6EDF8; --muted: #9DB0CF; --line: #1E3560;
+    --blue: #6FB4FF; --gold: #FFB217; --gold-ink: #FFC54D; --ok: #4CC98A; --warn: #FF6B73; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #07142A; --panel: #0D1F3D; --fg: #E6EDF8; --muted: #9DB0CF; --line: #1E3560;
+  --blue: #6FB4FF; --gold: #FFB217; --gold-ink: #FFC54D; --ok: #4CC98A; --warn: #FF6B73; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { overflow-x: hidden; }
+body {
+  background: var(--bg); color: var(--fg); font-family: var(--body); font-size: 15px; line-height: 1.55; margin: 0;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 20px 48px;
+}
+.wrap { max-width: 1180px; margin: 0 auto; display: grid; gap: 34px; }
+h1, h2 { font-family: var(--display); font-weight: 400; letter-spacing: .01em; text-wrap: balance; margin: 0; }
+h1 { font-size: clamp(32px, 6.4vw, 56px); line-height: 1; color: var(--blue); }
+h2 { font-size: clamp(22px, 3.2vw, 30px); color: var(--blue); }
+h3 { font-size: 15px; font-weight: 600; margin: 0 0 8px; }
+p { margin: 0; max-width: 74ch; }
+.eyebrow { font-size: 12px; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); font-weight: 500; }
+header { display: grid; gap: 12px; }
+.lede { color: var(--muted); font-size: 16px; }
+.modes { display: flex; gap: 6px; flex-wrap: wrap; }
+button.chip { font: 500 13px var(--body); color: var(--fg); background: var(--panel); border: 1px solid var(--line); border-radius: 999px; padding: 7px 14px; cursor: pointer; }
+.modes button.chip { font-size: 14px; font-weight: 600; padding: 9px 16px; }
+button.chip[aria-pressed="true"] { background: var(--blue); border-color: var(--blue); color: var(--bg); }
+button.chip:focus-visible, input:focus-visible, select:focus-visible, summary:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; }
+.stat { border-top: 3px solid var(--gold); padding-top: 8px; min-width: 0; }
+.stat b { display: block; font-family: var(--display); font-weight: 400; font-size: 24px; font-variant-numeric: tabular-nums; }
+.stat span { font-size: 13px; color: var(--muted); }
+.viewer { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+#stage { position: relative; width: 100%; height: min(72vh, 660px); min-height: 380px; background: #9cc6e8; }
+#stage canvas { display: block; width: 100%; height: 100%; touch-action: none; }
+#loading { position: absolute; inset: 0; display: grid; place-items: center; font-family: var(--display); color: #034491; font-size: 22px; }
+.hint { position: absolute; left: 10px; bottom: 10px; font-size: 12px; background: rgba(3,20,48,.62); color: #fff; padding: 4px 8px; border-radius: 6px; pointer-events: none; }
+.toolbar { display: flex; flex-wrap: wrap; gap: 10px 18px; padding: 12px; border-top: 1px solid var(--line); align-items: center; }
+.group { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.sun { display: flex; gap: 8px; align-items: center; font-size: 13px; color: var(--muted); flex-wrap: wrap; }
+.sun input { width: 140px; accent-color: var(--gold); }
+#sunlabel { font-variant-numeric: tabular-nums; color: var(--fg); }
+section.block { display: grid; gap: 14px; }
+.two { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 18px; }
+.sheet { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 14px; min-width: 0; }
+.sheet svg { width: 100%; height: auto; display: block; }
+.scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+.wide svg { min-width: 860px; }
+table { border-collapse: collapse; width: 100%; font-size: 14px; font-variant-numeric: tabular-nums; }
+th, td { text-align: left; padding: 7px 8px; border-bottom: 1px solid var(--line); vertical-align: middle; }
+th { font-weight: 500; color: var(--muted); font-size: 12px; letter-spacing: .06em; text-transform: uppercase; }
+td.num, th.num { text-align: right; white-space: nowrap; }
+.swatch { display: inline-block; width: 12px; height: 12px; border-radius: 3px; vertical-align: -1px; margin-right: 8px; }
+.note { font-size: 13px; color: var(--muted); }
+.status { font-size: 14px; font-weight: 500; padding: 9px 12px; border-radius: 8px; border: 1px solid var(--line); background: var(--panel); }
+.status.ok { color: var(--ok); }
+.status.bad { color: var(--warn); border-color: currentColor; }
+.concept { display: grid; gap: 10px; align-content: start; }
+.concept b, ol.steps b { font-weight: 600; }
+.specs { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; }
+.specs div { border-left: 3px solid var(--gold); padding-left: 10px; font-size: 13px; color: var(--muted); }
+.specs b { display: block; color: var(--fg); font-size: 18px; font-variant-numeric: tabular-nums; }
+ul.list { margin: 0; padding-left: 18px; display: grid; gap: 6px; }
+ol.steps { margin: 0; padding-left: 22px; display: grid; gap: 10px; }
+.who { font-size: 12px; color: var(--gold-ink); font-weight: 500; letter-spacing: .04em; }
+ul.rules { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+ul.rules li { display: grid; grid-template-columns: 22px 1fr; gap: 8px; }
+.mark { font-weight: 700; }
+.mark.ok { color: var(--ok); }
+.mark.att { color: var(--gold-ink); }
+.legend { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 8px 16px; font-size: 13px; margin-top: 12px; }
+.legend div { display: flex; gap: 8px; align-items: center; min-width: 0; }
+.plaques { display: grid; grid-template-columns: repeat(auto-fill, minmax(118px, 1fr)); gap: 14px; }
+.plaques figure { margin: 0; display: grid; gap: 6px; justify-items: center; font-size: 12px; color: var(--muted); text-align: center; }
+.plaques svg { width: 100%; max-width: 130px; height: auto; }
+.tentplaques { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 12px; }
+.tentplaques svg { width: 100%; height: auto; display: block; border-radius: 4px; }
+select.small, input.small { font: 500 14px var(--body); padding: 4px 6px; border: 1px solid var(--line); border-radius: 6px; background: var(--bg); color: var(--fg); }
+input.small { width: 64px; text-align: right; }
+details { border-top: 1px solid var(--line); padding-top: 10px; }
+summary { cursor: pointer; font-weight: 500; }
+.cuts { font-size: 13px; columns: 2 280px; column-gap: 24px; margin: 10px 0 0; padding-left: 18px; }
+.cuts li { break-inside: avoid; margin-bottom: 3px; }
+footer { font-size: 13px; color: var(--muted); display: grid; gap: 6px; }
+footer a { color: var(--blue); }
+@media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; } }
+</style>
+<body>
+<main class="wrap">
+  <header>
+    <div class="eyebrow">VI Campori DSA 2027 · Barretos · Clube de Desbravadores Jaguar</div>
+    <h1>Portal dos Guardiões</h1>
+    <p class="lede">Dois jaguares de perfil, cada um dentro de um anel de bambu tecido com sisal, guardam a entrada e olham para o nome do clube. Tudo é simétrico: o portal, as alas com as placas das unidades, a cerca, a praça, os corredores de barracas e as lixeiras. Escolha onde fica o portal e o projeto inteiro se reorganiza.</p>
+    <div class="modes" role="group" aria-label="Onde fica o portal">
+      <button class="chip" data-mode="rua21">Lateral · rua de 21 m</button>
+      <button class="chip" data-mode="rua20">Lateral · rua de 20 m</button>
+      <button class="chip" data-mode="esquina">Na esquina</button>
+    </div>
+    <div class="stats" id="stats"></div>
+  </header>
+
+  <div class="viewer">
+    <div id="stage"><div id="loading">Montando o acampamento…</div><div class="hint">Arraste para girar · role ou pince para aproximar</div></div>
+    <div class="toolbar">
+      <div class="group" role="group" aria-label="Câmera">
+        <button class="chip" data-view="geral" aria-pressed="true">Geral</button>
+        <button class="chip" data-view="portal">Portal</button>
+        <button class="chip" data-view="rua">Da rua</button>
+        <button class="chip" data-view="drone">Drone</button>
+        <button class="chip" data-view="topo">De cima</button>
+        <button class="chip" data-view="dentro">Na praça</button>
+      </div>
+      <div class="sun"><label for="hour">Hora</label><input id="hour" type="range" min="6" max="19" step="0.25" value="16"><span id="sunlabel"></span></div>
+      <button class="chip" id="night" aria-pressed="false">Noite</button>
+    </div>
+  </div>
+  <p class="status" id="status"></p>
+
+  <section class="block">
+    <h2>A ideia</h2>
+    <div class="two">
+      <div class="concept">
+        <p>O rosto do jaguar do escudo vira <b>dois guardiões</b>, um de cada lado da entrada, virados um para o outro. Cada cabeça fica dentro de um <b>anel de bambu</b> do tamanho de uma pessoa, preso por uma teia de sisal, como se o escudo redondo da marca tivesse saído do papel. As pintas são <b>janelas</b>, como na identidade visual, porque lembram as janelas da Igreja do Jaraguá.</p>
+        <p>No meio, o nome do clube numa placa entre duas travessas de bambu. Para fora, as <b>alas</b>: cinco placas em forma de janela de cada lado, uma por unidade, descendo de altura como degraus. As placas formam pares (Lince e Lince Negra, Tigres e Tigresa…), então quem olha da rua vê um desenho espelhado.</p>
+        <p>Do portal para dentro, o mesmo eixo organiza tudo: praça no centro, com os dois mastros abrindo o <b>corredor da liderança</b>; meninos de um lado, meninas do outro; varais, lixeiras e decoração repetidos nos dois lados.</p>
+      </div>
+      <div class="specs" id="specs"></div>
+    </div>
+  </section>
+
+  <section class="block">
+    <h2>O portal</h2>
+    <p class="note" id="portalNote"></p>
+    <div class="sheet scroll wide"><h3>Elevação, vista da rua (medidas em metros)</h3><div id="elev"></div></div>
+    <div class="two">
+      <div class="sheet"><h3>Medalhão do guardião</h3><div id="medal"></div></div>
+      <div class="sheet"><h3>Como se faz o medalhão</h3>
+        <ol class="steps">
+          <li><b>Anel.</b> Três ripas de bambu rachado (largura de 3 cm) curvadas e amarradas umas sobre as outras com barbante, fechando um círculo de 1,80 m. Por cima, sisal de 10 mm enrolado bem apertado, cobrindo as ripas.</li>
+          <li><b>Cabeça.</b> Compensado naval de 10 mm cortado na tico-tico pelo molde do perfil do escudo (1,33 × 1,48 m). Amarelo ouro, pintas em azul leal com contorno ouro escuro, olho azul claro e nariz vermelho. A borda é contornada com sisal colado.</li>
+          <li><b>Teia.</b> 24 fios de sisal de 6 mm, do anel até furos na borda da cabeça, esticados como raios. A teia segura a cabeça no centro e é a parte "artesanal" que aparece de perto.</li>
+          <li><b>Suporte.</b> Dois postes de bambu de 7 cm atrás do anel, com escoras para trás, apoiados numa caixa de lastro revestida de ripas, com duas bombonas de 20 L de água dentro.</li>
+          <li><b>Luz.</b> Fita de LED solar amarela por trás do sisal do anel e em volta da cabeça. À noite aparecem só os dois círculos e os perfis.</li>
+        </ol>
+      </div>
+    </div>
+  </section>
+
+  <section class="block">
+    <h2>Placas</h2>
+    <div class="sheet"><h3>Placa do clube, entre as travessas (2,90 × 0,50 m)</h3><div id="clubPlaque"></div><p class="note" style="margin-top:8px">Tem todos os dados que o manual exige: nome do clube, cidade, estado, país, Associação e União. Compensado de 10 mm, fundo azul leal, letras em ouro e branco, duas demãos de verniz por causa da chuva.</p></div>
+    <div class="sheet"><h3>Placas das unidades nas alas (janela de 0,42 × 0,58 m)</h3><div class="plaques" id="unitPlaques"></div><p class="note" style="margin-top:10px">Cada placa é uma pinta do jaguar: janela com topo em arco, fundo azul leal, borda ouro e uma faixa na cor da unidade. Fica no alto de um poste de bambu, e os postes descem de 2,05 m a 1,45 m a partir do portal. O lado esquerdo de quem chega fica com as unidades dos meninos; o direito, com as das meninas.</p></div>
+    <div class="sheet"><h3>Plaquinhas das barracas (0,40 × 0,30 m)</h3><div class="tentplaques" id="tentPlaques"></div><p class="note" style="margin-top:10px">Uma por unidade, numa estaca de bambu de 1 m na frente da primeira barraca do grupo, com um bandeirim na cor da unidade a 2 m de altura.</p></div>
+  </section>
+
+  <section class="block">
+    <h2>Área de acampamento</h2>
+    <p class="note" id="areaNote"></p>
+    <div class="sheet"><h3>Planta com medidas</h3><div class="scroll wide" id="planta"></div><div class="legend" id="legend"></div><p class="note" style="margin-top:8px">No celular, arraste a planta para o lado.</p></div>
+    <div class="two">
+      <div class="sheet"><h3>Unidades</h3><p class="note" style="margin-bottom:8px">O lado de cada unidade ainda é um palpite pelo nome. Ajuste aqui e tudo se refaz.</p><div class="scroll"><table id="units"><thead><tr><th>Grupo</th><th>Lado</th><th class="num">Barracas</th></tr></thead><tbody></tbody></table></div></div>
+      <div class="sheet"><h3>Fileiras</h3><div class="scroll"><table id="rows"><thead><tr><th>Fileira</th><th>Quem</th><th class="num">Começa</th><th class="num">Barracas</th></tr></thead><tbody></tbody></table></div><p class="note" style="margin-top:8px">"Começa" é a distância da cerca da frente até a primeira barraca, medida ao longo da fileira.</p></div>
+    </div>
+    <details class="sheet"><summary>Tabela de marcação de cada barraca</summary><p class="note" style="margin:8px 0">x e y são medidos a partir da esquina do lote: x ao longo da rua de 21 m e y ao longo da rua de 20 m, até o centro da barraca.</p><div class="scroll"><table id="marks"><thead><tr><th>Nº</th><th>Grupo</th><th class="num">x (m)</th><th class="num">y (m)</th><th>Porta virada para</th></tr></thead><tbody></tbody></table></div></details>
+  </section>
+
+  <section class="block">
+    <h2>Cerca e decoração</h2>
+    <div class="two">
+      <div class="sheet"><h3>Módulo da cerca (2,50 m)</h3><div id="fence"></div></div>
+      <div class="concept">
+        <p><b>Cerca de pioneiria em volta do lote todo</b>, sem furar o chão. Postes de bambu de 1,20 m a cada 2,50 m, cada um num pé em X com um saco de areia em cima. Duas cordas de sisal de 10 mm, a 0,55 m e a 1,05 m, amarradas com volta do fiel.</p>
+        <p><b>Nos lados que dão para a rua</b>, a corda de cima leva bandeirolas de tecido nas cores do clube (azul leal, azul claro, ouro), de 20 cm, a cada 30 cm, presas num barbante. Em cada poste, uma pintinha em forma de janela (12 × 16 cm) em ouro.</p>
+        <p><b>Nos lados que dão para os vizinhos</b>, só as duas cordas e fita zebrada nas pontas, para ninguém tropeçar nas cordas das barracas.</p>
+        <p><b>Nos quatro cantos</b>, um poste mais alto (2,20 m) num tripé, com uma lanterna solar. À noite o lote fica desenhado por quatro pontos de luz, mais os anéis do portal.</p>
+        <p><b>Nas alas</b>, a cerca vira parte do portal: as cordas passam entre os postes das placas e cruzam em X, trançadas como um alambrado de sisal.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="block">
+    <h2>Praça, lixo e serviços</h2>
+    <div class="two">
+      <div class="sheet"><h3>Estação de lixo (1,20 × 0,55 m)</h3><div id="bin"></div></div>
+      <div class="concept" id="services"></div>
+    </div>
+  </section>
+
+  <section class="block">
+    <h2>Materiais</h2>
+    <p class="note">Quantidades tiradas do próprio modelo 3D. O bambu é contado em varas de 6 m, com um plano de corte por bitola.</p>
+    <div class="sheet"><div class="scroll"><table id="mats"><thead><tr><th>Item</th><th class="num">Qtd.</th><th>Onde vai</th></tr></thead><tbody></tbody></table></div>
+      <details><summary>Plano de corte do bambu</summary><div id="cuts"></div></details>
+    </div>
+  </section>
+
+  <section class="block">
+    <h2>Montagem</h2>
+    <div class="two">
+      <div class="sheet"><h3>Em BH, antes da viagem</h3><ol class="steps" id="stepsBH"></ol></div>
+      <div class="sheet"><h3>No Campori (8 pessoas, cerca de 6 h)</h3><ol class="steps" id="stepsCamp"></ol></div>
+    </div>
+  </section>
+
+  <section class="block">
+    <h2>O que o manual pede</h2>
+    <div class="sheet"><ul class="rules" id="rules"></ul></div>
+  </section>
+
+  <footer>
+    <p>Projeto do Clube Jaguar para o VI Campori DSA 2027 (edição Ômega, 12 a 17/01/2027). Medidas da barraca: canadense de 2,27 × 2,40 m, porta no lado de 2,27 m.</p>
+    <p>Versões anteriores, para comparar: <a href="salto.html">Salto do Jaguar</a> · <a href="esquina.html">Portal de esquina</a></p>
+  </footer>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/controls/OrbitControls.js"></script>
+<script type="module">
+// ================= básicos =================
+const BRAND = { leal: '#034491', conf: '#2182BF', claro: '#31B5FF', ouro: '#FFB217', ouroEsc: '#CC8A15', ouroCl: '#FCB040', verm: '#FF1E2E' };
+const SISAL = '#C9B07A', BAMBU = '#C9A35E', INK = '#0B1A33';
+const $ = id => document.getElementById(id);
+const fmt = (n, d = 2) => n.toLocaleString('pt-BR', { minimumFractionDigits: d, maximumFractionDigits: d });
+const R2 = Math.SQRT1_2;
+const LOT = { X: 21, Z: 20 };
+const T = { w: 2.27, d: 2.4, h: 1.5, lat: 0.05 };
+const CORR = 1.5;
+// portal (coordenadas locais: x ao longo da frente, y para cima, z para dentro do lote)
+const GATE = { half: 1.32, h: 2.95, l1: 2.25, l2: 2.85, lx: 1.75, pw: 2.9, ph: 0.5, brace: 1.3 };
+const RING = { x: 2.45, R: 0.9, y: 1.85, post: 0.55 };
+const WING = { x0: 3.95, step: 1.0, n: 5, h0: 2.05, dh: 0.15, pw: 0.42, ph: 0.58, rail0: 3.3 };
+const PLUS = ['lince', 'tigres', 'leao', 'puma', 'guepardo'];
+const MINUS = ['lincenegra', 'tigresa', 'onca', 'pantera', 'leopardo'];
+
+const DEFAULT_GROUPS = [
+  { id: 'lince', name: 'Lince', side: 'M', n: 3, color: '#2182BF' },
+  { id: 'lincenegra', name: 'Lince Negra', side: 'F', n: 3, color: '#BC2460' },
+  { id: 'puma', name: 'Puma', side: 'M', n: 3, color: '#0E7490' },
+  { id: 'tigres', name: 'Tigres', side: 'M', n: 3, color: '#034491' },
+  { id: 'tigresa', name: 'Tigresa', side: 'F', n: 3, color: '#E0663A' },
+  { id: 'onca', name: 'Onça Pintada', side: 'F', n: 3, color: '#FFB217' },
+  { id: 'leao', name: 'Leão', side: 'M', n: 3, color: '#B7791F' },
+  { id: 'pantera', name: 'Pantera', side: 'F', n: 3, color: '#2B2F3A' },
+  { id: 'guepardo', name: 'Guepardo', side: 'M', n: 3, color: '#CC8A15' },
+  { id: 'leopardo', name: 'Leopardo', side: 'M', n: 3, color: '#31B5FF' },
+  { id: 'lidm', name: 'Liderança masculina', side: 'M', n: 2, color: '#5B6B86', lead: true },
+  { id: 'lidf', name: 'Liderança feminina', side: 'F', n: 2, color: '#8A6B86', lead: true },
+  { id: 'almox', name: 'Almoxarifado', side: 'M', n: 1, color: '#7A6A4F', lead: true, store: true }
+];
+const STORE = 'jaguar-guardioes-v1';
+const state = { mode: 'rua21', groups: DEFAULT_GROUPS.map(g => ({ ...g })) };
+try {
+  const s = JSON.parse(localStorage.getItem(STORE) || 'null');
+  if (s) { if (s.mode) state.mode = s.mode; (s.groups || []).forEach(o => { const g = state.groups.find(q => q.id === o.id); if (g) { g.side = o.side === 'F' ? 'F' : 'M'; g.n = Math.max(0, Math.min(8, +o.n || 0)); } }); }
+} catch (e) {}
+const save = () => { try { localStorage.setItem(STORE, JSON.stringify({ mode: state.mode, groups: state.groups.map(({ id, side, n }) => ({ id, side, n })) })); } catch (e) {} };
+const G = id => state.groups.find(g => g.id === id);
+
+// ================= referenciais =================
+// u ao longo da frente (dos módulos de barracas), w para dentro do lote
+const FRAMES = {
+  A: { o: [0, 0], U: [1, 0], V: [0, 1], L: 21, D: 20 },
+  B: { o: [0, 20], U: [0, -1], V: [1, 0], L: 20, D: 21 }
+};
+const f2w = (F, u, w) => ({ x: F.o[0] + u * F.U[0] + w * F.V[0], z: F.o[1] + u * F.U[1] + w * F.V[1] });
+const w2f = (F, x, z) => { const dx = x - F.o[0], dz = z - F.o[1]; return { u: dx * F.U[0] + dz * F.U[1], w: dx * F.V[0] + dz * F.V[1] }; };
+const rotOf = V => Math.atan2(V[0], V[1]);
+const AB = (x, z) => ({ a: (x + z) * R2, b: (x - z) * R2 });
+const fromAB = (a, b) => ({ x: (a + b) * R2, z: (a - b) * R2 });
+
+const MODES = {
+  rua21: { kind: 'lat', F: FRAMES.A, rua: 'rua de 21 m', uEdge: 0.3, w0: 1.5, midW0: 5.7, backRes: 1.7, backK: [0, 2] },
+  rua20: { kind: 'lat', F: FRAMES.B, rua: 'rua de 20 m', uEdge: 0.3, w0: 1.5, midW0: 5.7, backRes: 1.7, backK: [0, 2] },
+  esquina: { kind: 'esq', F: FRAMES.A, rua: 'esquina', uEdge: 0.65, w0: 2.5, backRes: 1.7, backK: [0] }
+};
+let M = MODES[state.mode] || MODES.rua21;
+// esquina: chanfro de 2,40 m nas duas ruas, praça quadrada de 4 m na diagonal, anéis nas duas ruas
+const ESQ = { leg: 2.5, gateA: 1.77, back: 3.1, pa0: 3.0, pa1: 7.0, phalf: 2.0, ringC: 3.55, wing0: 5.15, av0: 1.6, av1: 2.5 };
+
+function blocked(u, w, k) {
+  const F = M.F;
+  if (u < M.uEdge || u > F.L - 0.3 || w < M.w0 || w > F.D - 0.3) return true;
+  if (M.backK.includes(k) && w > F.D - M.backRes) return true;
+  if (M.kind === 'lat') return k === 1 && w < M.midW0;
+  const { x, z } = f2w(F, u, w), { a, b } = AB(x, z);
+  if (a < ESQ.back) return true;
+  if (a < ESQ.pa1 + 0.1 && Math.abs(b) < ESQ.phalf + 0.1) return true;
+  if (x > 2.5 && x < 4.6 && z < 1.6) return true;
+  if (z > 2.5 && z < 4.6 && x < 1.6) return true;
+  return false;
+}
+
+// ================= encaixe das barracas em corredores =================
+function faceOf(du) { const F = M.F, x = F.U[0] * du, z = F.U[1] * du; return Math.abs(x) > Math.abs(z) ? (x > 0 ? '+x' : '-x') : (z > 0 ? '+z' : '-z'); }
+let LAY = null;
+function layout() {
+  const F = M.F, mod = 2 * T.d + CORR, uA = M.uEdge, avail = F.L - 0.3 - uA;
+  const bg = Math.min(0.5, (avail - 3 * mod) / 2), off = (avail - 3 * mod - 2 * bg) / 2;
+  const SIDE = [['F', 'F'], ['LF', 'LM'], ['M', 'M']];
+  const rows = [], corridors = [];
+  for (let k = 0; k < 3; k++) {
+    const u0 = uA + off + k * (mod + bg);
+    const pair = [{ ua: u0, ub: u0 + T.d, du: 1 }, { ua: u0 + T.d + CORR, ub: u0 + mod, du: -1 }];
+    pair.forEach((r, i) => { r.k = k; r.side = SIDE[k][i]; r.id = rows.length + 1; rows.push(r); });
+    corridors.push({ k, ua: u0 + T.d, ub: u0 + T.d + CORR, rows: [rows.length - 2, rows.length - 1] });
+  }
+  const fits = (r, wa, wb) => { for (let i = 0; i <= 6; i++) for (let j = 0; j <= 6; j++) { const u = r.ua + 0.01 + (r.ub - r.ua - 0.02) * i / 6, w = wa + 0.01 + (wb - wa - 0.02) * j / 6; if (blocked(u, w, r.k)) return false; } return true; };
+  rows.forEach(r => {
+    r.slots = []; let w = M.w0;
+    while (w + T.w <= F.D - 0.3 + 1e-9) {
+      if (fits(r, w, w + T.w)) { const u = (r.ua + r.ub) / 2, wc = w + T.w / 2, p = f2w(F, u, wc), face = faceOf(r.du); r.slots.push({ x: p.x, z: p.z, u, w: wc, face, row: r }); w += T.w + T.lat; }
+      else w += 0.05;
+    }
+  });
+  corridors.forEach(c => { const s = c.rows.flatMap(i => rows[i].slots); c.wa = Math.min(...s.map(t => t.w)) - T.w / 2; c.wb = Math.max(...s.map(t => t.w)) + T.w / 2; });
+  // distribuição: lideranças na boca do corredor do meio, unidades nos corredores do seu lado
+  const pool = { M: [], F: [], LM: [], LF: [] }, ptr = { M: 0, F: 0, LM: 0, LF: 0 };
+  rows.forEach(r => pool[r.side].push(...r.slots));
+  const tents = [], out = [];
+  const put = (p, g) => { if (ptr[p] < pool[p].length) { tents.push({ ...pool[p][ptr[p]++], g }); return true; } return false; };
+  state.groups.filter(g => g.lead && !g.store).forEach(g => { for (let i = 0; i < g.n; i++) if (!put(g.side === 'M' ? 'LM' : 'LF', g) && !put(g.side, g)) out.push(g); });
+  ['M', 'F'].forEach(s => state.groups.filter(g => !g.lead && g.side === s).forEach(g => { for (let i = 0; i < g.n; i++) if (!put(s, g) && !put(s === 'M' ? 'LM' : 'LF', g)) out.push(g); }));
+  state.groups.filter(g => g.store).forEach(g => { for (let i = 0; i < g.n; i++) if (!put('LM', g) && !put('LF', g)) out.push(g); });
+  const order = state.groups.map(g => g.id);
+  tents.sort((p, q) => order.indexOf(p.g.id) - order.indexOf(q.g.id) || p.row.id - q.row.id || p.w - q.w);
+  tents.forEach((t, i) => t.num = i + 1);
+  const need = { M: 0, F: 0 }; state.groups.forEach(g => need[g.side] += g.n);
+  const total = rows.reduce((s, r) => s + r.slots.length, 0);
+  return { rows, corridors, tents, out, need, total, bg, off };
+}
+
+// ================= cabeça do jaguar (perfil do escudo) =================
+const HEAD_RAW = [[0.35,0.55],[0.15,1.3],[0.2,1.9],[0.45,2.45],[0.55,2.95],[0.95,2.62],[1.5,2.72],[2.1,2.47],[2.55,2.12],[2.8,1.86],[2.72,1.6],[2.45,1.55],[2.7,1.36],[2.55,1.1],[2.0,1.0],[1.75,0.5],[1.25,0.0],[0.8,0.25]];
+const HS = 0.5, HCX = 1.475, HCY = 1.475;
+const HEAD = HEAD_RAW.map(([x, y]) => [(x - HCX) * HS, (y - HCY) * HS]);   // centrada no anel, olhando para +x
+const EYE = [(2.08 - HCX) * HS, (2.12 - HCY) * HS];
+const NOSE = [[2.58, 1.86], [2.76, 1.86], [2.7, 1.72]].map(([x, y]) => [(x - HCX) * HS, (y - HCY) * HS]);
+function inPoly(px, py, poly) { let c = false; for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) { const [xi, yi] = poly[i], [xj, yj] = poly[j]; if ((yi > py) !== (yj > py) && px < (xj - xi) * (py - yi) / (yj - yi) + xi) c = !c; } return c; }
+const SPOT = { w: 0.11, h: 0.15 };
+const SPOTS = (() => {
+  const out = [];
+  for (let y = -0.55; y <= 0.62; y += 0.23) for (let x = -0.62; x <= 0.62; x += 0.19) {
+    const xx = x + ((Math.round((y + 0.55) / 0.23)) % 2 ? 0.095 : 0);
+    const pts = [[xx - SPOT.w / 2 - .03, y - .03], [xx + SPOT.w / 2 + .03, y - .03], [xx - SPOT.w / 2 - .03, y + SPOT.h + .03], [xx + SPOT.w / 2 + .03, y + SPOT.h + .03]];
+    if (pts.every(([a, b]) => inPoly(a, b, HEAD)) && Math.hypot(xx - EYE[0], y + SPOT.h / 2 - EYE[1]) > 0.17 && xx < 0.42) out.push([xx, y]);
+  }
+  return out;
+})();
+// teia: do anel até o ponto da borda da cabeça na mesma direção
+const WEB = (() => {
+  const n = 24, out = [];
+  for (let i = 0; i < n; i++) {
+    const ang = (i + 0.5) / n * Math.PI * 2, dx = Math.cos(ang), dy = Math.sin(ang);
+    let best = null;
+    for (let s = 0; s < HEAD.length; s++) {
+      const [x1, y1] = HEAD[s], [x2, y2] = HEAD[(s + 1) % HEAD.length];
+      const ex = x2 - x1, ey = y2 - y1, den = dx * ey - dy * ex; if (Math.abs(den) < 1e-9) continue;
+      const t = (x1 * ey - y1 * ex) / den, uu = (x1 * dy - y1 * dx) / den;
+      if (t > 0 && uu >= 0 && uu <= 1 && (!best || t > best)) best = t;
+    }
+    if (best) out.push([[dx * (RING.R - 0.04), dy * (RING.R - 0.04)], [dx * best, dy * best]]);
+  }
+  return out;
+})();
+const windowPath = (x, y, w, h) => `M${x - w / 2} ${y} L${x - w / 2} ${y + h - w / 2} A${w / 2} ${w / 2} 0 0 1 ${x + w / 2} ${y + h - w / 2} L${x + w / 2} ${y} Z`;
+
+// ================= three.js =================
+try { await Promise.all([document.fonts.load('400 120px "Fugaz One"'), document.fonts.load('500 40px Lexend'), document.fonts.load('600 40px Lexend')]); } catch (e) {}
+if (THREE.ColorManagement) THREE.ColorManagement.legacyMode = false;
+const stage = $('stage');
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.outputEncoding = THREE.sRGBEncoding;
+stage.prepend(renderer.domElement);
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 400);
+const controls = new THREE.OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true; controls.maxPolarAngle = Math.PI / 2 - 0.02; controls.minDistance = 1.5; controls.maxDistance = 80;
+const hemi = new THREE.HemisphereLight(0xdfefff, 0x5a6b3a, 0.65); scene.add(hemi);
+const sun = new THREE.DirectionalLight(0xfff3dc, 1.15);
+sun.castShadow = true; sun.shadow.mapSize.set(2048, 2048);
+Object.assign(sun.shadow.camera, { left: -19, right: 19, top: 19, bottom: -19, near: 1, far: 90 });
+sun.shadow.bias = -0.0006; sun.shadow.normalBias = 0.02;
+sun.target.position.set(10.5, 0, 10); scene.add(sun, sun.target);
+
+const v = (x, y, z) => new THREE.Vector3(x, y, z);
+const UP = v(0, 1, 0);
+const mat = (color, o = {}) => new THREE.MeshStandardMaterial(Object.assign({ color, roughness: 0.75, metalness: 0 }, o));
+function canvasTex(w, h, draw) { const c = document.createElement('canvas'); c.width = w; c.height = h; draw(c.getContext('2d'), w, h); const t = new THREE.CanvasTexture(c); t.encoding = THREE.sRGBEncoding; t.anisotropy = 8; return t; }
+const BAMBOO_TEX = (() => { const t = canvasTex(16, 128, g => { const grd = g.createLinearGradient(0, 0, 16, 0); grd.addColorStop(0, '#b8924e'); grd.addColorStop(.5, '#d9b878'); grd.addColorStop(1, '#a9853f'); g.fillStyle = grd; g.fillRect(0, 0, 16, 128); g.fillStyle = '#7d5f2a'; g.fillRect(0, 60, 16, 6); g.fillStyle = 'rgba(255,255,255,.18)'; g.fillRect(0, 66, 16, 2); }); t.wrapS = t.wrapT = THREE.RepeatWrapping; return t; })();
+const SISAL_TEX = (() => { const t = canvasTex(32, 32, g => { g.fillStyle = '#c9b07a'; g.fillRect(0, 0, 32, 32); g.strokeStyle = 'rgba(110,80,30,.45)'; g.lineWidth = 3; for (let i = -32; i < 64; i += 8) { g.beginPath(); g.moveTo(i, 0); g.lineTo(i + 32, 32); g.stroke(); } }); t.wrapS = t.wrapT = THREE.RepeatWrapping; return t; })();
+const bambooMat = mat(0xffffff, { map: BAMBOO_TEX, roughness: 0.6 });
+const ropeMat = mat(0xc9b07a, { roughness: 1 });
+const wrapMat = mat(0xffffff, { map: SISAL_TEX, roughness: 1 });
+const sandMat = mat(0xd8c79c, { roughness: 1, side: THREE.DoubleSide });
+const lealM = mat(BRAND.leal), ouroM = mat(BRAND.ouro, { roughness: .55 });
+
+let BOM;
+function resetBOM() { BOM = { bamboo: [], lash: 0, sisal10: 0, sisal6: 0, barbante: 0, sand: 0, galoes: 0, led: 0, ripas: 0, lanterns: 0, bins: 0, flags: 0, bandeirolas: 0 }; }
+function cyl(parent, a, b, r, material, seg = 10) {
+  const len = a.distanceTo(b), geo = new THREE.CylinderGeometry(r, r, len, seg, 1), m = new THREE.Mesh(geo, material);
+  m.position.copy(a).add(b).multiplyScalar(0.5); m.quaternion.setFromUnitVectors(UP, b.clone().sub(a).normalize());
+  m.castShadow = m.receiveShadow = true; parent.add(m); return { m, geo, len };
+}
+const RAD = { G: 0.05, M: 0.035, F: 0.024 };
+function bamboo(parent, a, b, cls, label) {
+  const { geo, len } = cyl(parent, a, b, RAD[cls], bambooMat);
+  const uv = geo.attributes.uv; for (let i = 0; i < uv.count; i++) uv.setY(i, uv.getY(i) * len / 0.4);
+  BOM.bamboo.push({ cls, len: Math.round(len * 100) / 100, label });
+}
+function lash(parent, p, r = 0.07) { const m = new THREE.Mesh(new THREE.CylinderGeometry(r, r, 0.12, 12), wrapMat); m.position.copy(p); m.castShadow = true; parent.add(m); BOM.lash++; }
+function rope(parent, a, b, r = 0.006, kind = 'sisal10') { cyl(parent, a, b, r, ropeMat, 6); BOM[kind] += a.distanceTo(b); }
+const galaoGeo = new THREE.CylinderGeometry(0.135, 0.135, 0.46, 16), galaoMat = mat(0x3b82c4, { transparent: true, opacity: 0.85, roughness: 0.3 });
+function galao(parent, x, y, z) { const m = new THREE.Mesh(galaoGeo, galaoMat); m.position.set(x, y + 0.23, z); parent.add(m); BOM.galoes++; }
+function sandbag(parent, x, z) { const m = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.12, 0.22), mat(0xb59a6a, { roughness: 1 })); m.position.set(x, 0.06, z); m.castShadow = true; parent.add(m); BOM.sand++; }
+function xFoot(parent, x, z, len = 0.6) { const h = len / 2; cyl(parent, v(x - h * R2, 0.03, z - h * R2), v(x + h * R2, 0.03, z + h * R2), 0.02, bambooMat); cyl(parent, v(x - h * R2, 0.03, z + h * R2), v(x + h * R2, 0.03, z - h * R2), 0.02, bambooMat); BOM.bamboo.push({ cls: 'F', len: len, label: 'Pé em X' }, { cls: 'F', len: len, label: 'Pé em X' }); }
+const ledMat = new THREE.MeshBasicMaterial({ color: 0xffd36a }), ledGeo = new THREE.SphereGeometry(0.02, 6, 6);
+let leds;
+function ledAlong(parent, pts, step = 0.1, count = true) { for (let i = 0; i < pts.length - 1; i++) { const a = pts[i], b = pts[i + 1], n = Math.max(1, Math.round(a.distanceTo(b) / step)); if (count) BOM.led += a.distanceTo(b); for (let k = 0; k < n; k++) { const m = new THREE.Mesh(ledGeo, ledMat); m.position.lerpVectors(a, b, k / n); parent.add(m); } } }
+const lum = hex => { const n = parseInt(hex.slice(1), 16); return (0.299 * (n >> 16) + 0.587 * ((n >> 8) & 255) + 0.114 * (n & 255)) / 255; };
+
+// ---------- texturas ----------
+const plaqueClubTex = canvasTex(2048, 354, (g, w, h) => {
+  g.fillStyle = BRAND.leal; g.fillRect(0, 0, w, h); g.strokeStyle = BRAND.ouro; g.lineWidth = 14; g.strokeRect(10, 10, w - 20, h - 20);
+  g.fillStyle = BRAND.ouro; g.textAlign = 'center'; g.textBaseline = 'alphabetic';
+  g.font = '400 190px "Fugaz One", Impact'; g.fillText('JAGUAR', w / 2, 198);
+  g.fillStyle = '#fff'; g.font = '600 40px Lexend, sans-serif'; g.fillText('CLUBE DE DESBRAVADORES · BELO HORIZONTE · MG · BRASIL', w / 2, 262);
+  g.fillStyle = BRAND.ouroCl; g.font = '500 34px Lexend, sans-serif'; g.fillText('ASSOCIAÇÃO MINEIRA CENTRAL · UNIÃO SUDESTE BRASILEIRA', w / 2, 316);
+  [[150, 1], [w - 150, -1]].forEach(([cx]) => { for (let i = 0; i < 3; i++) for (let j = 0; j < 2; j++) { const x = cx - 60 + i * 60 + (j ? 30 : 0), y = 90 + j * 110; g.fillStyle = j ? BRAND.claro : BRAND.ouro; g.beginPath(); g.moveTo(x - 16, y + 60); g.lineTo(x - 16, y + 16); g.arc(x, y + 16, 16, Math.PI, 0); g.lineTo(x + 16, y + 60); g.fill(); } });
+});
+const unitTexCache = {};
+function unitTex(gr) {
+  if (unitTexCache[gr.id]) return unitTexCache[gr.id];
+  return unitTexCache[gr.id] = canvasTex(256, 354, (g, w, h) => {
+    g.fillStyle = BRAND.ouro; g.fillRect(0, 0, w, h);
+    g.fillStyle = BRAND.leal; g.beginPath(); g.moveTo(14, h - 14); g.lineTo(14, w / 2); g.arc(w / 2, w / 2, w / 2 - 14, Math.PI, 0); g.lineTo(w - 14, h - 14); g.closePath(); g.fill();
+    g.fillStyle = gr.color; g.fillRect(14, h - 70, w - 28, 56);
+    g.fillStyle = BRAND.ouro; g.font = '500 20px Lexend, sans-serif'; g.textAlign = 'center'; g.fillText('UNIDADE', w / 2, 96);
+    g.fillStyle = '#fff'; const words = gr.name.toUpperCase().split(' '); g.font = '400 ' + (words.some(s => s.length > 6) ? 40 : 50) + 'px "Fugaz One", Impact';
+    words.forEach((wd, i) => g.fillText(wd, w / 2, 170 - (words.length - 1) * 24 + i * 50));
+  });
+}
+const tentTexCache = {};
+function tentPlaqueTex(gr) {
+  if (tentTexCache[gr.id]) return tentTexCache[gr.id];
+  return tentTexCache[gr.id] = canvasTex(400, 300, (c, w, h) => {
+    c.fillStyle = BRAND.leal; c.fillRect(0, 0, w, h); c.fillStyle = gr.color; c.fillRect(0, h - 34, w, 34);
+    c.strokeStyle = BRAND.ouro; c.lineWidth = 8; c.strokeRect(8, 8, w - 16, h - 16);
+    c.fillStyle = BRAND.ouro; c.font = '500 20px Lexend, sans-serif'; c.textAlign = 'center'; c.fillText(gr.lead ? 'CLUBE JAGUAR' : 'UNIDADE', w / 2, 52);
+    c.fillStyle = '#fff'; const words = gr.name.toUpperCase().split(' '); c.font = '400 ' + (words.some(s => s.length > 8) ? 44 : 58) + 'px "Fugaz One", Impact';
+    words.forEach((wd, i) => c.fillText(wd, w / 2, h / 2 + 18 - (words.length - 1) * 26 + i * 52));
+  });
+}
+function flagTex(kind) {
+  return canvasTex(300, 200, (g, w, h) => {
+    if (kind === 'dbv') { g.fillStyle = '#f4f4f4'; g.fillRect(0, 0, w, h); g.fillStyle = '#7a1f2b'; g.font = '600 26px Lexend, sans-serif'; g.textAlign = 'center'; g.fillText('DESBRAVADORES', w / 2, h / 2 + 9); }
+    else { g.fillStyle = BRAND.leal; g.fillRect(0, 0, w, h); g.fillStyle = BRAND.ouro; g.font = '400 58px "Fugaz One", Impact'; g.textAlign = 'center'; g.fillText('JAGUAR', w / 2, h / 2 + 20); }
+  });
+}
+const FLAGS = { dbv: flagTex('dbv'), clube: flagTex('clube') };
+function panelTex(title, color) { return canvasTex(400, 300, (g, w) => { g.fillStyle = color; g.fillRect(0, 0, w, 300); g.fillStyle = '#fff'; g.font = '600 30px Lexend, sans-serif'; g.textAlign = 'center'; g.fillText(title, w / 2, 48); g.strokeStyle = 'rgba(255,255,255,.7)'; g.lineWidth = 4; for (let i = 0; i < 6; i++) g.strokeRect(30 + (i % 3) * 120, 80 + Math.floor(i / 3) * 100, 100, 80); }); }
+const PANELS = { nos: panelTex('QUADRO DE NÓS', '#5a3c1e'), hist: panelTex('NOSSA HISTÓRIA', BRAND.leal) };
+function plateMesh(w, h, tex, both = true) { return new THREE.Mesh(new THREE.PlaneGeometry(w, h), mat(0xffffff, { map: tex, side: both ? THREE.DoubleSide : THREE.FrontSide, roughness: .6 })); }
+
+// ---------- chão fixo ----------
+const plane = (w, d, m, x, y, z, parent = scene) => { const p = new THREE.Mesh(new THREE.PlaneGeometry(w, d), m); p.rotation.x = -Math.PI / 2; p.position.set(x, y, z); p.receiveShadow = true; parent.add(p); return p; };
+plane(160, 160, mat(0x7f9f58, { roughness: 1 }), 10, -0.01, 10);
+const streetMat = mat(0xcdb98f, { roughness: 1 });
+plane(70, 8, streetMat, 12, 0, -4); plane(9, 70, streetMat, -4.5, 0.001, 12);
+plane(LOT.X, LOT.Z, mat(0x8fb366, { roughness: 1 }), LOT.X / 2, 0.003, LOT.Z / 2);
+const neighborTent = mat(0x9aa7b8, { roughness: .8 });
+[[24, 0, 8, 20], [0, 23, 21, 6], [24, 23, 8, 6]].forEach(([x, z, w, d]) => { for (let xx = x + 1.4; xx < x + w; xx += 2.8) for (let zz = z + 1.6; zz < z + d; zz += 3.4) { const t = new THREE.Mesh(new THREE.ConeGeometry(1.25, 1.3, 4), neighborTent); t.position.set(xx, 0.65, zz); t.rotation.y = Math.PI / 4; t.castShadow = true; scene.add(t); } });
+
+// ================= peças do portal =================
+// O portal é montado em grupos locais: frente para -z (a rua), x ao longo da frente.
+// Vista da rua, o +x local fica à esquerda de quem olha.
+function buildGate(g) {
+  const H = GATE.half;
+  [-1, 1].forEach(s => {
+    const x = s * H;
+    // pilar: feixe de 3 colmos grossos
+    [[0, -0.045], [-0.045, 0.03], [0.045, 0.03]].forEach(([dx, dz]) => bamboo(g, v(x + dx, 0, dz), v(x + dx, GATE.h, dz), 'G', 'Pilar do portão (feixe de 3)'));
+    [0.4, 1.3, 2.05].forEach(y => lash(g, v(x, y, 0), 0.085));
+    // escora e pé para trás, com lastro
+    bamboo(g, v(x, 2.1, 0.06), v(x, 0.04, GATE.brace), 'M', 'Escora do pilar');
+    bamboo(g, v(x, 0.05, 0.06), v(x, 0.05, GATE.brace), 'M', 'Pé do pilar');
+    lash(g, v(x, 0.08, GATE.brace - 0.05), 0.05); lash(g, v(x, 2.06, 0.08), 0.06);
+    galao(g, x, 0.05, 0.55); galao(g, x, 0.05, 0.9);
+    // estai para trás e para o lado
+    rope(g, v(x, 2.7, 0.04), v(x + s * 0.9, 0, 1.6), 0.006, 'sisal10');
+  });
+  // travessas e placa
+  [GATE.l1, GATE.l2].forEach(y => { bamboo(g, v(-GATE.lx, y, -0.07), v(GATE.lx, y, -0.07), 'G', 'Travessa do portão'); [-H, H].forEach(x => lash(g, v(x, y, -0.04), 0.09)); });
+  const p = plateMesh(GATE.pw, GATE.ph, plaqueClubTex); p.position.set(0, (GATE.l1 + GATE.l2) / 2, -0.1); p.rotation.y = Math.PI; p.castShadow = true; g.add(p);
+  const back = new THREE.Mesh(new THREE.BoxGeometry(GATE.pw, GATE.ph, 0.012), lealM); back.position.set(0, (GATE.l1 + GATE.l2) / 2, -0.09); g.add(back);
+  // franja curta de sisal nas pontas da travessa de cima
+  [-1, 1].forEach(s => { for (let i = 0; i < 6; i++) { const x = s * (GATE.lx - 0.05 - i * 0.04); rope(g, v(x, GATE.l2, -0.08), v(x, GATE.l2 - 0.28, -0.08), 0.008, 'sisal6'); } });
+  ledAlong(leds.portal, [v(-1.45, 2.3, -0.12), v(1.45, 2.3, -0.12), v(1.45, 2.8, -0.12), v(-1.45, 2.8, -0.12), v(-1.45, 2.3, -0.12)]);
+}
+function headShape(dir) { return new THREE.Shape(HEAD.map(([x, y]) => new THREE.Vector2(x * dir, y))); }
+// dir: para onde a cabeça olha no x local (+1 ou -1). Anel centrado em (cx, RING.y, 0)
+function buildMedallion(g, cx, dir, link) {
+  const cy = RING.y, R = RING.R;
+  // anel: três ripas + sisal enrolado
+  const ring = new THREE.Mesh(new THREE.TorusGeometry(R, 0.045, 10, 72), wrapMat); ring.position.set(cx, cy, 0); ring.castShadow = true; g.add(ring);
+  const ring2 = new THREE.Mesh(new THREE.TorusGeometry(R - 0.07, 0.012, 6, 72), mat(BRAND.ouroEsc)); ring2.position.set(cx, cy, -0.01); g.add(ring2);
+  BOM.ripas += 2 * Math.PI * R * 3; BOM.sisal10 += 2 * Math.PI * R * 9;
+  // cabeça de compensado
+  const head = new THREE.Mesh(new THREE.ExtrudeGeometry(headShape(dir), { depth: 0.02, bevelEnabled: false, curveSegments: 8 }), [ouroM, mat(BRAND.ouroEsc)]);
+  head.position.set(cx, cy, -0.01); head.castShadow = true; g.add(head);
+  const spotsM = mat(BRAND.leal, { side: THREE.DoubleSide }), z0 = -0.013;
+  SPOTS.forEach(([x, y]) => { const s = new THREE.Shape(); const xx = x * dir, w = SPOT.w, h = SPOT.h; s.moveTo(xx - w / 2, y); s.lineTo(xx - w / 2, y + h - w / 2); s.absarc(xx, y + h - w / 2, w / 2, Math.PI, 0, true); s.lineTo(xx + w / 2, y); s.closePath(); const m = new THREE.Mesh(new THREE.ShapeGeometry(s), spotsM); m.position.set(cx, cy, z0); g.add(m); });
+  const eye = new THREE.Mesh(new THREE.CircleGeometry(0.045, 20), eyeMat); eye.position.set(cx + EYE[0] * dir, cy + EYE[1], z0); eye.rotation.y = Math.PI; g.add(eye);
+  const nose = new THREE.Mesh(new THREE.ShapeGeometry(new THREE.Shape(NOSE.map(([x, y]) => new THREE.Vector2(x * dir, y)))), mat(BRAND.verm, { side: THREE.DoubleSide })); nose.position.set(cx, cy, z0); g.add(nose);
+  // contorno de sisal
+  const outline = [...HEAD, HEAD[0]].map(([x, y]) => v(cx + x * dir, cy + y, -0.005));
+  for (let i = 0; i < outline.length - 1; i++) rope(g, outline[i], outline[i + 1], 0.008, 'sisal10');
+  // teia
+  WEB.forEach(([[ax, ay], [bx, by]]) => rope(g, v(cx + ax * dir, cy + ay, 0), v(cx + bx * dir, cy + by, -0.005), 0.004, 'sisal6'));
+  // postes, escoras e caixa de lastro
+  [-1, 1].forEach(s => {
+    const x = cx + s * RING.post;
+    bamboo(g, v(x, 0.5, 0.08), v(x, cy + 0.35, 0.08), 'M', 'Poste do medalhão');
+    bamboo(g, v(x, cy - 0.1, 0.1), v(x, 0.5, 1.05), 'M', 'Escora do medalhão');
+    lash(g, v(x, cy - 0.1, 0.1), 0.05); lash(g, v(x, cy + 0.25, 0.06), 0.05);
+  });
+  const box = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.5, 0.65), bambooMat); box.position.set(cx, 0.25, 0.4); box.castShadow = box.receiveShadow = true; g.add(box);
+  const boxTop = new THREE.Mesh(new THREE.BoxGeometry(1.52, 0.04, 0.67), wrapMat); boxTop.position.set(cx, 0.5, 0.4); g.add(boxTop);
+  BOM.bamboo.push(...Array.from({ length: 16 }, () => ({ cls: 'F', len: 1.5, label: 'Ripa da caixa de lastro' })));
+  galao({ add: () => {} }, 0, 0, 0); galao({ add: () => {} }, 0, 0, 0);
+  // braço que liga o anel ao pilar do portão (só no portal lateral)
+  if (link != null) { bamboo(g, v(cx + dir * (R + 0.02), cy, 0.03), v(link, cy, 0.03), 'M', 'Braço anel–pilar'); lash(g, v(link, cy, 0.03), 0.06); }
+  ledAlong(leds.portal, Array.from({ length: 49 }, (_, i) => { const a = i / 48 * Math.PI * 2; return v(cx + Math.cos(a) * (R + 0.05), cy + Math.sin(a) * (R + 0.05), -0.02); }), 0.09);
+  ledAlong(leds.portal, outline.map(p => p.clone().setZ(-0.03)), 0.08);
+}
+// ala: postes que descem a partir do portal, placa-janela no alto, cordas trançadas
+function buildWing(g, dir, x0, units, rail0 = WING.rail0) {
+  const xs = Array.from({ length: WING.n }, (_, i) => dir * (x0 + i * WING.step));
+  xs.forEach((x, i) => {
+    const h = WING.h0 - i * WING.dh;
+    bamboo(g, v(x, 0, 0), v(x, h, 0), 'M', 'Poste da ala');
+    xFoot(g, x, 0.12); sandbag(g, x, 0.2); BOM.lash++;
+    const gr = G(units[i]); if (!gr) return;
+    const s = new THREE.Shape(); const w = WING.pw, ph = WING.ph; s.moveTo(-w / 2, 0); s.lineTo(w / 2, 0); s.lineTo(w / 2, ph - w / 2); s.absarc(0, ph - w / 2, w / 2, 0, Math.PI, false); s.lineTo(-w / 2, 0);
+    const geo = new THREE.ShapeGeometry(s, 16); const uv = geo.attributes.uv, pos = geo.attributes.position;
+    for (let k = 0; k < uv.count; k++) uv.setXY(k, (pos.getX(k) + w / 2) / w, pos.getY(k) / ph);
+    const pl = new THREE.Mesh(geo, mat(0xffffff, { map: unitTex(gr), side: THREE.DoubleSide, roughness: .6 }));
+    pl.position.set(x, h - ph - 0.05, -0.05); pl.rotation.y = Math.PI; pl.castShadow = true; g.add(pl);
+    const lantern = new THREE.Mesh(new THREE.SphereGeometry(0.05, 10, 8), lanternMat); lantern.position.set(x, h + 0.05, 0); g.add(lantern); BOM.lanterns++;
+  });
+  const xa = dir * rail0, xb = xs[xs.length - 1];
+  [0.45, 0.95].forEach(y => rope(g, v(xa, y, 0.02), v(xb, y, 0.02), 0.009));
+  const pts = [xa, ...xs];
+  for (let i = 0; i < pts.length - 1; i++) { rope(g, v(pts[i], 0.45, 0.02), v(pts[i + 1], 0.95, 0.02), 0.006, 'sisal6'); rope(g, v(pts[i], 0.95, 0.02), v(pts[i + 1], 0.45, 0.02), 0.006, 'sisal6'); }
+  bamboo(g, v(xa, 0, 0), v(xa, 1.05, 0), 'M', 'Poste de arranque da ala'); xFoot(g, xa, 0.12); sandbag(g, xa, 0.2);
+}
+const eyeMat = mat(BRAND.claro, { emissive: 0x000000 });
+const lanternMat = mat(0xfff0c2, { emissive: 0x000000 });
+
+// ================= cerca =================
+function fenceRun(parent, a, b, deco) {
+  const len = Math.hypot(b.x - a.x, b.z - a.z), n = Math.max(1, Math.round(len / 2.5));
+  const pts = Array.from({ length: n + 1 }, (_, i) => ({ x: a.x + (b.x - a.x) * i / n, z: a.z + (b.z - a.z) * i / n }));
+  pts.forEach((p, i) => {
+    bamboo(parent, v(p.x, 0, p.z), v(p.x, 1.2, p.z), 'F', 'Poste da cerca'); xFoot(parent, p.x, p.z, 0.4); const ux = (b.x - a.x) / len, uz = (b.z - a.z) / len; sandbag(parent, p.x + (i === n ? -ux : ux) * 0.22, p.z + (i === n ? -uz : uz) * 0.22);
+    if (deco) { const sp = new THREE.Mesh(new THREE.CircleGeometry(0.07, 12), ouroM); sp.position.set(p.x, 1.05, p.z); sp.lookAt(p.x - (b.z - a.z), 1.05, p.z + (b.x - a.x)); parent.add(sp); }
+  });
+  [0.55, 1.05].forEach(y => rope(parent, v(a.x, y, a.z), v(b.x, y, b.z), 0.007));
+  if (deco) {
+    const cols = [BRAND.leal, BRAND.claro, BRAND.ouro].map(c => mat(c, { side: THREE.DoubleSide, roughness: .9 }));
+    const m = Math.floor(len / 0.3), dx = (b.x - a.x) / len, dz = (b.z - a.z) / len, ang = Math.atan2(-dz, dx);
+    const triGeo = new THREE.ShapeGeometry(new THREE.Shape([new THREE.Vector2(-0.1, 0), new THREE.Vector2(0.1, 0), new THREE.Vector2(0, -0.2)]));
+    for (let i = 0; i < m; i++) { const t = new THREE.Mesh(triGeo, cols[i % 3]); t.position.set(a.x + dx * (i + 0.5) * 0.3, 1.04, a.z + dz * (i + 0.5) * 0.3); t.rotation.y = ang; parent.add(t); }
+    BOM.bandeirolas += m; BOM.barbante += len;
+  }
+}
+function cornerPost(parent, x, z) {
+  bamboo(parent, v(x, 0, z), v(x, 2.2, z), 'M', 'Poste de canto');
+  for (let k = 0; k < 3; k++) { const ang = k * 2 * Math.PI / 3; bamboo(parent, v(x, 1.0, z), v(x + Math.cos(ang) * 0.45, 0, z + Math.sin(ang) * 0.45), 'F', 'Pé do tripé de canto'); }
+  BOM.lash++;
+  const l = new THREE.Mesh(new THREE.SphereGeometry(0.08, 12, 10), lanternMat); l.position.set(x, 2.28, z); parent.add(l); BOM.lanterns++;
+}
+
+// ================= praça, mastros, lixo, varais =================
+function mastro(parent, x, z, kind, dir = [1, 0]) {
+  bamboo(parent, v(x, 0, z), v(x, 4.0, z), 'M', 'Mastro');
+  for (let k = 0; k < 3; k++) { const ang = k * 2 * Math.PI / 3 + 0.3; bamboo(parent, v(x, 1.0, z), v(x + Math.cos(ang) * 0.45, 0, z + Math.sin(ang) * 0.45), 'F', 'Pé do tripé do mastro'); }
+  BOM.lash += 2; BOM.flags++;
+  const fl = plateMesh(0.9, 0.6, FLAGS[kind]); fl.position.set(x + dir[0] * 0.47, 3.6, z + dir[1] * 0.47); fl.rotation.y = Math.atan2(-dir[1], dir[0]); fl.userData.r0 = fl.rotation.y; fl.castShadow = true; parent.add(fl);
+  return fl;
+}
+function binStation(parent, x, z, rot) {
+  const g = new THREE.Group(); g.position.set(x, 0, z); g.rotation.y = rot; parent.add(g);
+  [[-0.3, 0x2a6fdb], [0.3, 0x7a5230]].forEach(([dx, c]) => { const b = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.2, 0.7, 16), mat(c, { roughness: .5 })); b.position.set(dx, 0.35, 0); b.castShadow = true; g.add(b); const lid = new THREE.Mesh(new THREE.CylinderGeometry(0.23, 0.23, 0.04, 16), mat(0x222222)); lid.position.set(dx, 0.72, 0); g.add(lid); BOM.bins++; });
+  [-0.6, 0.6].forEach(dx => { bamboo(g, v(dx, 0, -0.27), v(dx, 1.0, -0.27), 'F', 'Estação de lixo · poste'); bamboo(g, v(dx, 0, 0.27), v(dx, 1.0, 0.27), 'F', 'Estação de lixo · poste'); });
+  bamboo(g, v(-0.6, 1.0, -0.27), v(0.6, 1.0, -0.27), 'F', 'Estação de lixo · travessa'); bamboo(g, v(-0.6, 1.0, 0.27), v(0.6, 1.0, 0.27), 'F', 'Estação de lixo · travessa');
+  BOM.lash += 4;
+  const sign = plateMesh(1.0, 0.18, signTex); sign.position.set(0, 1.12, -0.28); sign.rotation.y = Math.PI; g.add(sign);
+}
+const signTex = canvasTex(500, 90, (g, w, h) => { g.fillStyle = '#2a6fdb'; g.fillRect(0, 0, w / 2, h); g.fillStyle = '#7a5230'; g.fillRect(w / 2, 0, w / 2, h); g.fillStyle = '#fff'; g.font = '600 34px Lexend, sans-serif'; g.textAlign = 'center'; g.fillText('SECO', w / 4, 58); g.fillText('ORGÂNICO', w * 3 / 4, 58); });
+function varal(parent, a, b) {
+  [a, b].forEach(p => { for (let k = 0; k < 3; k++) { const ang = k * 2 * Math.PI / 3; bamboo(parent, v(p.x, 1.8, p.z), v(p.x + Math.cos(ang) * 0.5, 0, p.z + Math.sin(ang) * 0.5), 'F', 'Tripé do varal'); } BOM.lash++; });
+  rope(parent, v(a.x, 1.75, a.z), v(b.x, 1.75, b.z), 0.006);
+  const cols = [0xffffff, 0x2182bf, 0xffb217, 0xbc2460, 0x8fa3bf];
+  const n = Math.floor(Math.hypot(b.x - a.x, b.z - a.z) / 0.45);
+  for (let i = 1; i < n; i++) { const t = i / n, c = new THREE.Mesh(new THREE.PlaneGeometry(0.3, 0.45), mat(cols[i % 5], { side: THREE.DoubleSide })); c.position.set(a.x + (b.x - a.x) * t, 1.5, a.z + (b.z - a.z) * t); c.rotation.y = Math.atan2(-(b.z - a.z), b.x - a.x); parent.add(c); }
+}
+function tenda(parent, x, z, rot, size) {
+  const g = new THREE.Group(); g.position.set(x, 0, z); g.rotation.y = rot; parent.add(g);
+  const h = size / 2;
+  [[-h, -h], [h, -h], [h, h], [-h, h]].forEach(([a, b]) => cyl(g, v(a, 0, b), v(a, 2.3, b), 0.03, mat(0xcfd6df, { metalness: .4, roughness: .4 })));
+  const roof = new THREE.Mesh(new THREE.ConeGeometry(h * Math.SQRT2, 0.8, 4, 1, true), mat(0xf4f6fa, { side: THREE.DoubleSide, roughness: .9 })); roof.position.set(0, 2.7, 0); roof.rotation.y = Math.PI / 4; roof.castShadow = true; g.add(roof);
+  const val = new THREE.Mesh(new THREE.CylinderGeometry(h * Math.SQRT2, h * Math.SQRT2, 0.22, 4, 1, true), mat(BRAND.leal, { side: THREE.DoubleSide })); val.position.set(0, 2.2, 0); val.rotation.y = Math.PI / 4; g.add(val);
+  const stoolM = mat(0x2b4f80); for (let i = 0; i < 10; i++) { const ang = i / 10 * Math.PI * 2, s = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.38, 0.32), stoolM); s.position.set(Math.cos(ang) * (h - 0.35), 0.19, Math.sin(ang) * (h - 0.35)); s.castShadow = true; g.add(s); }
+}
+function panel(parent, x, z, rot, tex) {
+  const g = new THREE.Group(); g.position.set(x, 0, z); g.rotation.y = rot; parent.add(g);
+  [-0.55, 0.55].forEach(dx => { bamboo(g, v(dx, 0, 0), v(dx, 1.75, 0), 'F', 'Painel · poste'); xFoot(g, dx, 0, 0.5); });
+  const p = plateMesh(1.0, 0.75, tex); p.position.set(0, 1.25, -0.03); p.rotation.y = Math.PI; g.add(p);
+}
+function sapateira(parent, x, z, rot) {
+  const g = new THREE.Group(); g.position.set(x, 0, z); g.rotation.y = rot; parent.add(g);
+  [-0.5, 0.5].forEach(dx => [-0.15, 0.15].forEach(dz => bamboo(g, v(dx, 0, dz), v(dx, 0.6, dz), 'F', 'Sapateira · pé')));
+  [0.2, 0.45].forEach(y => [-0.15, 0.15].forEach(dz => bamboo(g, v(-0.55, y, dz), v(0.55, y, dz), 'F', 'Sapateira · travessa')));
+  BOM.lash += 8;
+}
+function waterTable(parent, x, z, rot) {
+  const g = new THREE.Group(); g.position.set(x, 0, z); g.rotation.y = rot; parent.add(g);
+  const top = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.04, 0.5), mat(0x8a6a3f)); top.position.y = 0.8; g.add(top);
+  [[-0.4, -0.2], [0.4, -0.2], [-0.4, 0.2], [0.4, 0.2]].forEach(([dx, dz]) => cyl(g, v(dx, 0, dz), v(dx, 0.8, dz), 0.02, bambooMat));
+  const tank = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.14, 0.38, 16), mat(0x3b82c4, { transparent: true, opacity: .85 })); tank.position.set(-0.2, 1.01, 0); g.add(tank);
+  const kit = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.2, 0.2), mat(0xffffff)); kit.position.set(0.22, 0.92, 0); g.add(kit);
+  const cross = new THREE.Mesh(new THREE.PlaneGeometry(0.12, 0.12), mat(BRAND.verm)); cross.position.set(0.22, 0.92, -0.101); cross.rotation.y = Math.PI; g.add(cross);
+  const ext = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, 0.5, 12), mat(0xd01818)); ext.position.set(0.55, 0.25, 0.1); g.add(ext);
+}
+
+// ================= barracas =================
+const FACE = { '-z': 0, '+z': Math.PI, '-x': Math.PI / 2, '+x': -Math.PI / 2 };
+const FDIR = { '-z': [0, -1], '+z': [0, 1], '-x': [-1, 0], '+x': [1, 0] };
+const TENT_BLUE = 0x2182BF, TENT_YELLOW = 0xFFB217;
+const tentGeo = [-1, 1].map(s => { const hw = T.w / 2, hd = T.d / 2; const p = [0, T.h, -hd, s * hw, 0, -hd, s * hw, 0, hd, 0, T.h, -hd, s * hw, 0, hd, 0, T.h, hd, 0, T.h, -hd, 0, 0, -hd, s * hw, 0, -hd, 0, T.h, hd, s * hw, 0, hd, 0, 0, hd]; const geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.Float32BufferAttribute(p, 3)); geo.computeVertexNormals(); return geo; });
+const tentMats = [mat(TENT_BLUE, { roughness: .7, side: THREE.DoubleSide }), mat(TENT_YELLOW, { roughness: .7, side: THREE.DoubleSide })];
+const doorGeo = new THREE.ShapeGeometry(new THREE.Shape([new THREE.Vector2(-T.w * 0.22, 0), new THREE.Vector2(T.w * 0.22, 0), new THREE.Vector2(0, T.h * 0.78)])), doorMat = mat(0x0d1a2c);
+function tentMesh(t) {
+  const g = new THREE.Group();
+  tentGeo.forEach((geo, i) => { const m = new THREE.Mesh(geo, tentMats[i]); m.castShadow = m.receiveShadow = true; g.add(m); });
+  const door = new THREE.Mesh(doorGeo, doorMat); door.position.z = -T.d / 2 - 0.005; door.rotation.y = Math.PI; g.add(door);
+  g.position.set(t.x, 0, t.z); g.rotation.y = FACE[t.face]; return g;
+}
+
+// ================= montagem da cena (muda com o modo) =================
+const site = new THREE.Group(); scene.add(site);
+const camp = new THREE.Group(); scene.add(camp);
+leds = { portal: new THREE.Group() };
+const glows = [];
+let flagMeshes = [];
+function clear(g) { while (g.children.length) g.remove(g.children[0]); }
+function local(parent, x, z, rot) { const g = new THREE.Group(); g.position.set(x, 0, z); g.rotation.y = rot; parent.add(g); return g; }
+const PRACA = {};   // itens da praça em coordenadas do mundo, para a planta
+function buildSite() {
+  clear(site); clear(leds.portal); glows.forEach(l => scene.remove(l)); glows.length = 0; flagMeshes = [];
+  site.add(leds.portal); leds.portal.visible = night;
+  const F = M.F, items = PRACA; Object.keys(items).forEach(k => delete items[k]);
+  const sand = (poly, y = 0.006) => { const s = new THREE.Shape(poly.map(p => new THREE.Vector2(p.x, p.z))); const m = new THREE.Mesh(new THREE.ShapeGeometry(s), sandMat); m.rotation.x = Math.PI / 2; m.position.y = y; m.receiveShadow = true; site.add(m); };
+  if (M.kind === 'lat') {
+    const c = F.L / 2, rot = rotOf(F.V), P = (u, w) => f2w(F, u, w);
+    const pg = local(site, P(c, 0.3).x, P(c, 0.3).z, rot);
+    buildGate(pg);
+    buildMedallion(pg, RING.x, -1, GATE.half + 0.06);
+    buildMedallion(pg, -RING.x, 1, -GATE.half - 0.06);
+    buildWing(pg, 1, WING.x0, PLUS); buildWing(pg, -1, WING.x0, MINUS);
+    // chão: praça, avenida da frente, corredores
+    const q = (u0, w0, u1, w1) => [P(u0, w0), P(u1, w0), P(u1, w1), P(u0, w1)];
+    sand(q(c - 3.15, 0.3, c + 3.15, M.midW0 - 0.1));
+    sand(q(0.3, 0.6, F.L - 0.3, 1.5), 0.005);
+    // praça
+    const at = (du, w) => P(c + du, w);
+    const ten = at(0, 3.3); tenda(site, ten.x, ten.z, rot, 2.8);
+    const mL = at(1.2, 5.2), mR = at(-1.2, 5.2);
+    const toSt = [-F.V[0], -F.V[1]]; flagMeshes.push(mastro(site, mL.x, mL.z, 'dbv', toSt), mastro(site, mR.x, mR.z, 'clube', toSt));
+    items.mastros = [mL, mR]; items.tenda = { c: ten, size: 2.8 };
+    const bL = at(2.5, 5.05), bR = at(-2.5, 5.05); binStation(site, bL.x, bL.z, rot); binStation(site, bR.x, bR.z, rot);
+    const pL = at(2.75, 3.0), pR = at(-2.75, 3.0); panel(site, pL.x, pL.z, rot + Math.PI / 2, PANELS.hist); panel(site, pR.x, pR.z, rot - Math.PI / 2, PANELS.nos);
+    const sL = at(2.75, 1.85), sR = at(-2.75, 1.85); sapateira(site, sL.x, sL.z, rot + Math.PI / 2); sapateira(site, sR.x, sR.z, rot + Math.PI / 2);
+    const wL = at(2.75, 4.2), wR = at(-2.75, 4.2); waterTable(site, wL.x, wL.z, rot + Math.PI / 2); waterTable(site, wR.x, wR.z, rot - Math.PI / 2);
+    // fundos: varais e lixo nas costas dos módulos de fora
+    const lay = LAY, back = F.D - 0.85, mods = [0, 2].map(k => { const rr = lay.rows.filter(r => r.k === k); return [rr[0].ua, rr[1].ub]; });
+    items.varais = []; items.bins = [bL, bR]; items.paineis = [pL, pR]; items.sapateiras = [sL, sR]; items.agua = [wL, wR];
+    mods.forEach(([ua, ub]) => { const a = P(ua + 0.4, back), b = P(ua + 4.4, back); varal(site, a, b); items.varais.push([a, b]); const bs = P(ub - 0.8, back); binStation(site, bs.x, bs.z, rot); items.bins.push(bs); });
+    // cerca
+    const corners = [P(0.15, 0.15), P(F.L - 0.15, 0.15), P(F.L - 0.15, F.D - 0.15), P(0.15, F.D - 0.15)];
+    const wingEnd = WING.x0 + (WING.n - 1) * WING.step + 0.3;
+    fenceRun(site, P(0.15, 0.15), P(c - wingEnd, 0.15), true); fenceRun(site, P(c + wingEnd, 0.15), P(F.L - 0.15, 0.15), true);
+    fenceRun(site, corners[1], corners[2], false); fenceRun(site, corners[2], corners[3], false); fenceRun(site, corners[3], corners[0], false);
+    corners.forEach(p => cornerPost(site, p.x, p.z));
+    items.portal = { c: P(c, 0.3), rot };
+    const gl = new THREE.PointLight(0xffc35a, 0, 8); const gp = P(c, 1.4); gl.position.set(gp.x, 2.4, gp.z); scene.add(gl); glows.push(gl);
+    const g2 = new THREE.PointLight(0xffe2a8, 0, 9); g2.position.set(ten.x, 2.2, ten.z); scene.add(g2); glows.push(g2);
+  } else {
+    const gp = fromAB(ESQ.gateA, 0), rot = Math.PI / 4;
+    buildGate(local(site, gp.x, gp.z, rot));
+    const rA = local(site, ESQ.ringC, 0.3, 0); buildMedallion(rA, 0, -1, null); buildWing(rA, 1, ESQ.wing0 - ESQ.ringC, PLUS, 1.05);
+    const rB = local(site, 0.3, ESQ.ringC, Math.PI / 2); buildMedallion(rB, 0, 1, null); buildWing(rB, -1, ESQ.wing0 - ESQ.ringC, MINUS, 1.05);
+    // amarração do portão aos anéis: corda baixa trançada
+    [[v(ESQ.leg, 0.6, 0.05), v(ESQ.ringC - 0.95, 0.6, 0.3)], [v(0.05, 0.6, ESQ.leg), v(0.3, 0.6, ESQ.ringC - 0.95)]].forEach(([a, b]) => rope(site, a, b, 0.009));
+    // chão
+    const pr = [fromAB(ESQ.pa0, -ESQ.phalf), fromAB(ESQ.pa0, ESQ.phalf), fromAB(ESQ.pa1, ESQ.phalf), fromAB(ESQ.pa1, -ESQ.phalf)];
+    sand([{ x: 0, z: 0 }, { x: ESQ.leg + 0.6, z: 0 }, ...pr.slice(1, 3).reverse().slice(0, 0), fromAB(ESQ.pa0, ESQ.phalf), fromAB(ESQ.pa0, -ESQ.phalf), { x: 0, z: ESQ.leg + 0.6 }]);
+    sand(pr, 0.007);
+    sand([{ x: 4.2, z: ESQ.av0 }, { x: 20.7, z: ESQ.av0 }, { x: 20.7, z: ESQ.av1 }, { x: 4.9, z: ESQ.av1 }], 0.005);
+    const at = (a, b) => fromAB(a, b);
+    const ten = at(4.7, 0); tenda(site, ten.x, ten.z, Math.PI / 4, 2.4);
+    const mL = at(6.5, 1.05), mR = at(6.5, -1.05);
+    flagMeshes.push(mastro(site, mL.x, mL.z, 'dbv', [-R2, -R2]), mastro(site, mR.x, mR.z, 'clube', [-R2, -R2]));
+    items.mastros = [mL, mR]; items.tenda = { c: ten, size: 2.4 };
+    const bL = at(3.6, 1.6), bR = at(3.6, -1.6); binStation(site, bL.x, bL.z, Math.PI / 4 + Math.PI / 2); binStation(site, bR.x, bR.z, Math.PI / 4 - Math.PI / 2);
+    const pL = at(5.2, 1.75), pR = at(5.2, -1.75); panel(site, pL.x, pL.z, Math.PI / 4 + Math.PI / 2, PANELS.hist); panel(site, pR.x, pR.z, Math.PI / 4 - Math.PI / 2, PANELS.nos);
+    const wt = at(6.35, 0); waterTable(site, wt.x, wt.z, Math.PI / 4);
+    const sap = LAY.corridors.map(c => ({ x: (c.ua + c.ub) / 2, z: 1.12 })); sap.forEach(p => sapateira(site, p.x, p.z, 0));
+    items.bins = [bL, bR]; items.paineis = [pL, pR]; items.sapateiras = sap; items.agua = [wt];
+    // fundos
+    items.varais = [];
+    const lay = LAY, m0 = lay.rows.filter(r => r.k === 0), m2 = lay.rows.filter(r => r.k === 2);
+    [[m0[0].ua + 0.3, m0[1].ub - 0.3], [m2[0].ua + 0.3, m2[1].ub - 0.3]].forEach(([x0, x1]) => { const a = { x: x0, z: 19.25 }, b = { x: x0 + 4.0, z: 19.25 }; varal(site, a, b); items.varais.push([a, b]); const bs = { x: x1 - 0.4, z: 19.2 }; binStation(site, bs.x, bs.z, 0); items.bins.push(bs); });
+    // cerca
+    const wingEnd = ESQ.wing0 + (WING.n - 1) * WING.step + 0.3;
+    fenceRun(site, { x: wingEnd, z: 0.15 }, { x: 20.85, z: 0.15 }, true);
+    fenceRun(site, { x: 0.15, z: wingEnd }, { x: 0.15, z: 19.85 }, true);
+    fenceRun(site, { x: 20.85, z: 0.15 }, { x: 20.85, z: 19.85 }, false);
+    fenceRun(site, { x: 20.85, z: 19.85 }, { x: 0.15, z: 19.85 }, false);
+    [[20.85, 0.15], [20.85, 19.85], [0.15, 19.85]].forEach(([x, z]) => cornerPost(site, x, z));
+    items.portal = { c: gp, rot };
+    const gl = new THREE.PointLight(0xffc35a, 0, 8); const g1 = at(2.6, 0); gl.position.set(g1.x, 2.4, g1.z); scene.add(gl); glows.push(gl);
+    const g2 = new THREE.PointLight(0xffe2a8, 0, 9); g2.position.set(ten.x, 2.2, ten.z); scene.add(g2); glows.push(g2);
+  }
+  scene.add(site);
+}
+function buildCamp() {
+  clear(camp);
+  const firsts = {};
+  LAY.tents.forEach(t => { camp.add(tentMesh(t)); if (!firsts[t.g.id] || t.num < firsts[t.g.id].num) firsts[t.g.id] = t; });
+  Object.values(firsts).forEach(t => {
+    const [fx, fz] = FDIR[t.face], reach = T.d / 2 + 0.35, sx = -fz, sz = fx;
+    const px = t.x + fx * reach + sx * 0.75, pz = t.z + fz * reach + sz * 0.75;
+    cyl(camp, v(px, 0, pz), v(px, 1.0, pz), 0.02, bambooMat);
+    const board = plateMesh(0.4, 0.3, tentPlaqueTex(t.g)); board.position.set(px + fx * 0.03, 0.95, pz + fz * 0.03); board.lookAt(px + fx * 5, 0.95, pz + fz * 5); camp.add(board);
+    const bx = px + sx * 0.3, bz = pz + sz * 0.3; cyl(camp, v(bx, 0, bz), v(bx, 2.0, bz), 0.015, bambooMat);
+    const flag = new THREE.Mesh(new THREE.ShapeGeometry(new THREE.Shape([new THREE.Vector2(0, 0), new THREE.Vector2(0, 0.35), new THREE.Vector2(0.55, 0.175)])), mat(t.g.color, { side: THREE.DoubleSide }));
+    flag.position.set(bx, 1.6, bz); flag.rotation.y = Math.atan2(-sz, sx); camp.add(flag);
+  });
+  // corredores de areia
+  LAY.corridors.forEach(c => {
+    const F = M.F, p = [f2w(F, c.ua, c.wa), f2w(F, c.ub, c.wa), f2w(F, c.ub, c.wb), f2w(F, c.ua, c.wb)];
+    const m = new THREE.Mesh(new THREE.ShapeGeometry(new THREE.Shape(p.map(q => new THREE.Vector2(q.x, q.z)))), sandMat); m.rotation.x = Math.PI / 2; m.position.y = 0.008; m.receiveShadow = true; camp.add(m);
+  });
+}
+
+// ================= sol e noite =================
+const norm2 = (x, z) => { const l = Math.hypot(x, z); return { x: x / l, z: z / l }; };
+const northL = norm2(-0.84, -0.62), eastL = norm2(0.54, -0.79);
+const LAT = -20.56 * Math.PI / 180, DEC = -21.2 * Math.PI / 180, SOLAR_NOON = 12.38;
+let night = false;
+function setSun(hour) {
+  const H = (hour - SOLAR_NOON) * 15 * Math.PI / 180;
+  const alt = Math.asin(Math.sin(LAT) * Math.sin(DEC) + Math.cos(LAT) * Math.cos(DEC) * Math.cos(H));
+  const az = Math.atan2(-Math.cos(DEC) * Math.sin(H), Math.sin(DEC) * Math.cos(LAT) - Math.cos(DEC) * Math.sin(LAT) * Math.cos(H));
+  const e = Math.sin(az) * Math.cos(alt), n = Math.cos(az) * Math.cos(alt);
+  sun.position.set(10.5 + (e * eastL.x + n * northL.x) * 45, Math.max(0.5, Math.sin(alt) * 45), 10 + (e * eastL.z + n * northL.z) * 45);
+  const day = Math.max(0, Math.min(1, alt / 0.25));
+  sun.intensity = night ? 0 : 1.15 * day;
+  const hh = Math.floor(hour), mm = Math.round((hour - hh) * 60);
+  $('sunlabel').textContent = night ? 'noite' : `${hh}h${String(mm).padStart(2, '0')}`;
+  if (night) { scene.background = new THREE.Color(0x0a1530); hemi.intensity = 0.1; scene.fog = new THREE.Fog(0x0a1530, 30, 100); }
+  else { const c = new THREE.Color(0xf3b27a).lerp(new THREE.Color(0x9cc6e8), day); scene.background = c; scene.fog = new THREE.Fog(c, 55, 140); hemi.intensity = 0.35 + 0.35 * day; }
+}
+function setNight(on) {
+  night = on; leds.portal.visible = on; glows.forEach((l, i) => l.intensity = on ? (i ? 1.0 : 1.5) : 0);
+  eyeMat.emissive.set(on ? 0x31b5ff : 0x000000); eyeMat.emissiveIntensity = on ? 1.8 : 0;
+  lanternMat.emissive.set(on ? 0xffd36a : 0x000000); lanternMat.emissiveIntensity = on ? 2 : 0;
+  $('night').setAttribute('aria-pressed', String(on)); setSun(+$('hour').value);
+}
+
+// ================= câmeras =================
+function views() {
+  if (M.kind === 'lat') {
+    const F = M.F, c = F.L / 2, P = (u, w, y) => { const p = f2w(F, u, w); return v(p.x, y, p.z); };
+    return { geral: { pos: P(c + 9, -11, 13), tgt: P(c, 9, 0) }, portal: { pos: P(c + 2.5, -6.2, 2.4), tgt: P(c, 0.5, 1.7) }, rua: { pos: P(c - 4, -7, 1.65), tgt: P(c, 2, 1.5) }, drone: { pos: P(c, -8, 7), tgt: P(c, 3, 1.2) }, topo: { pos: P(c + 0.01, 10, 40), tgt: P(c, 10, 0) }, dentro: { pos: P(c + 1.5, 4.8, 1.6), tgt: P(c, 0, 1.6) } };
+  }
+  const D = (a, b, y) => { const p = fromAB(a, b); return v(p.x, y, p.z); };
+  return { geral: { pos: D(-12, 6, 14), tgt: D(13, 0, 0) }, portal: { pos: D(-5.5, 1.6, 2.5), tgt: D(2.2, 0, 1.6) }, rua: { pos: D(-7.5, -3.5, 1.65), tgt: D(3, 0, 1.5) }, drone: { pos: D(-8, 0, 7.5), tgt: D(4, 0, 1.0) }, topo: { pos: D(14.5, 0.01, 44), tgt: D(14.5, 0, 0) }, dentro: { pos: D(7.6, 0.3, 1.6), tgt: D(1, 0, 1.6) } };
+}
+let anim = null, curView = 'geral';
+function goView(name, instant) {
+  curView = name; const V = views()[name];
+  if (instant) { camera.position.copy(V.pos); controls.target.copy(V.tgt); anim = null; }
+  else anim = { t0: performance.now(), p0: camera.position.clone(), q0: controls.target.clone(), p1: V.pos, q1: V.tgt };
+  document.querySelectorAll('[data-view]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.view === name)));
+}
+const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+function resize() { const w = stage.clientWidth, h = stage.clientHeight; renderer.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix(); }
+new ResizeObserver(resize).observe(stage); resize();
+function loop(now) {
+  if (anim) { const k = reduce ? 1 : Math.min(1, (now - anim.t0) / 800), e = k < .5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2; camera.position.lerpVectors(anim.p0, anim.p1, e); controls.target.lerpVectors(anim.q0, anim.q1, e); if (k >= 1) anim = null; }
+  const t = now / 1000; flagMeshes.forEach((f, i) => f.rotation.y = f.userData.r0 + Math.sin(t * 1.3 + i) * 0.2);
+  controls.update(); renderer.render(scene, camera); requestAnimationFrame(loop);
+}
+
+// ================= SVG: utilidades =================
+const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;');
+function svgText(x, y, t, o = {}) { return `<text x="${x.toFixed(1)}" y="${y.toFixed(1)}" font-size="${o.size || 12}" font-family="Lexend, sans-serif" font-weight="${o.weight || 500}" fill="${o.fill || INK}" text-anchor="${o.anchor || 'middle'}"${o.rot ? ` transform="rotate(${o.rot.toFixed(1)} ${x.toFixed(1)} ${y.toFixed(1)})"` : ''}${o.halo ? ' paint-order="stroke" stroke="#fff" stroke-width="3.5" stroke-linejoin="round"' : ''}>${esc(t)}</text>`; }
+// cota entre dois pontos de tela, deslocada "off" px para a esquerda do sentido a→b
+function cota(ax, ay, bx, by, label, off = 14, color = '#7a2e00') {
+  const dx = bx - ax, dy = by - ay, L = Math.hypot(dx, dy) || 1, nx = -dy / L, ny = dx / L;
+  const a2x = ax + nx * off, a2y = ay + ny * off, b2x = bx + nx * off, b2y = by + ny * off;
+  let ang = Math.atan2(dy, dx) * 180 / Math.PI; if (ang > 90) ang -= 180; if (ang < -90) ang += 180;
+  const mx = (a2x + b2x) / 2 + nx * 5, my = (a2y + b2y) / 2 + ny * 5, t = 4;
+  const tick = (x, y) => `<line x1="${(x - (dx + dy) / L * t).toFixed(1)}" y1="${(y - (dy - dx) / L * t).toFixed(1)}" x2="${(x + (dx + dy) / L * t).toFixed(1)}" y2="${(y + (dy - dx) / L * t).toFixed(1)}" stroke="${color}" stroke-width="1.4"/>`;
+  return `<g><line x1="${ax.toFixed(1)}" y1="${ay.toFixed(1)}" x2="${a2x.toFixed(1)}" y2="${a2y.toFixed(1)}" stroke="${color}" stroke-width=".6" opacity=".6"/><line x1="${bx.toFixed(1)}" y1="${by.toFixed(1)}" x2="${b2x.toFixed(1)}" y2="${b2y.toFixed(1)}" stroke="${color}" stroke-width=".6" opacity=".6"/><line x1="${a2x.toFixed(1)}" y1="${a2y.toFixed(1)}" x2="${b2x.toFixed(1)}" y2="${b2y.toFixed(1)}" stroke="${color}" stroke-width="1"/>${tick(a2x, a2y)}${tick(b2x, b2y)}${svgText(mx, my + 4, label, { size: 12.5, weight: 700, fill: color, rot: ang, halo: true })}</g>`;
+}
+const headPath = (cx, cy, s, dir) => 'M' + HEAD.map(([x, y]) => `${(cx + x * dir * s).toFixed(1)} ${(cy - y * s).toFixed(1)}`).join(' L') + ' Z';
+
+// ================= elevação do portal =================
+function elevacao() {
+  const S = 62, W = 2 * 8.6 * S + 80, H = 3.5 * S + 150, cx = W / 2, gy = H - 95;
+  const X = lx => cx - lx * S, Y = y => gy - y * S;
+  let s = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Elevação do portal visto da rua, com medidas"><rect width="${W}" height="${H}" fill="#fff"/>`;
+  s += `<line x1="20" y1="${gy}" x2="${W - 20}" y2="${gy}" stroke="${INK}" stroke-width="1.5"/>`;
+  s += `<line x1="20" y1="${Y(3)}" x2="${W - 20}" y2="${Y(3)}" stroke="${BRAND.verm}" stroke-dasharray="6 5" stroke-width="1"/>` + svgText(30, Y(3) - 6, 'limite do manual: 3,00 m', { anchor: 'start', fill: BRAND.verm, size: 11 });
+  const bam = (x1, y1, x2, y2, w = 6) => `<line x1="${X(x1)}" y1="${Y(y1)}" x2="${X(x2)}" y2="${Y(y2)}" stroke="${BAMBU}" stroke-width="${w}" stroke-linecap="round"/>`;
+  const rope = (x1, y1, x2, y2, w = 1.5) => `<line x1="${X(x1)}" y1="${Y(y1)}" x2="${X(x2)}" y2="${Y(y2)}" stroke="${SISAL}" stroke-width="${w}"/>`;
+  // alas
+  [1, -1].forEach(dir => {
+    const xs = Array.from({ length: WING.n }, (_, i) => dir * (WING.x0 + i * WING.step)), pts = [dir * WING.rail0, ...xs];
+    s += rope(pts[0], 0.45, pts[pts.length - 1], 0.45, 2.2) + rope(pts[0], 0.95, pts[pts.length - 1], 0.95, 2.2);
+    for (let i = 0; i < pts.length - 1; i++) s += rope(pts[i], 0.45, pts[i + 1], 0.95, 1.2) + rope(pts[i], 0.95, pts[i + 1], 0.45, 1.2);
+    s += bam(dir * WING.rail0, 0, dir * WING.rail0, 1.05, 5);
+    const units = dir > 0 ? PLUS : MINUS;
+    xs.forEach((x, i) => {
+      const h = WING.h0 - i * WING.dh, gr = G(units[i]); s += bam(x, 0, x, h, 5);
+      const pw = WING.pw * S, ph = WING.ph * S, bx = X(x), by = Y(h - 0.05 - WING.ph);
+      s += `<path d="M${bx - pw / 2} ${by} L${bx - pw / 2} ${by - ph + pw / 2} A${pw / 2} ${pw / 2} 0 0 1 ${bx + pw / 2} ${by - ph + pw / 2} L${bx + pw / 2} ${by} Z" fill="${BRAND.leal}" stroke="${BRAND.ouro}" stroke-width="3"/>`;
+      s += `<rect x="${bx - pw / 2 + 2}" y="${by - 9}" width="${pw - 4}" height="7" fill="${gr ? gr.color : '#999'}"/>`;
+      if (gr) gr.name.toUpperCase().split(' ').forEach((wd, k, arr) => { s += svgText(bx, by - ph / 2 + 4 - (arr.length - 1) * 5 + k * 10, wd, { size: 7.5, fill: '#fff', weight: 600 }); });
+      s += svgText(bx, Y(h) - 8, fmt(h), { size: 10.5, fill: '#7a2e00', weight: 700 });
+    });
+  });
+  // medalhões
+  [[RING.x, -1], [-RING.x, 1]].forEach(([rx, dir]) => {
+    s += `<rect x="${X(rx) - 0.75 * S}" y="${Y(0.5)}" width="${1.5 * S}" height="${0.5 * S}" fill="${BAMBU}" opacity=".55" stroke="${INK}" stroke-width=".8"/>`;
+    [-1, 1].forEach(k => s += bam(rx + k * RING.post, 0.5, rx + k * RING.post, RING.y + 0.35, 6));
+    WEB.forEach(([[ax, ay], [bx, by]]) => s += rope(rx + ax * dir, RING.y + ay, rx + bx * dir, RING.y + by, 1));
+    s += `<circle cx="${X(rx)}" cy="${Y(RING.y)}" r="${RING.R * S}" fill="none" stroke="${SISAL}" stroke-width="7"/><circle cx="${X(rx)}" cy="${Y(RING.y)}" r="${(RING.R - 0.07) * S}" fill="none" stroke="${BRAND.ouroEsc}" stroke-width="1.5"/>`;
+    // no desenho, a cabeça olha para o portão: x de tela = cx - x local, então inverte
+    s += `<path d="${headPath(X(rx), Y(RING.y), S, -dir)}" fill="${BRAND.ouro}" stroke="${SISAL}" stroke-width="2.5"/>`;
+    SPOTS.forEach(([x, y]) => { s += `<path d="${windowPathSvg(X(rx) - x * dir * S, Y(RING.y + y), SPOT.w * S, SPOT.h * S)}" fill="${BRAND.leal}"/>`; });
+    s += `<circle cx="${X(rx) - EYE[0] * dir * S}" cy="${Y(RING.y + EYE[1])}" r="${0.045 * S}" fill="${BRAND.claro}"/>`;
+    s += `<path d="M${NOSE.map(([x, y]) => `${X(rx) - x * dir * S} ${Y(RING.y + y)}`).join(' L')} Z" fill="${BRAND.verm}"/>`;
+    s += bam(rx + dir * (RING.R + 0.02), RING.y, -dir * GATE.half, RING.y, 5);
+  });
+  // portão
+  [-1, 1].forEach(k => { s += bam(k * GATE.half, 0, k * GATE.half, GATE.h, 13); [0.4, 1.3, 2.05].forEach(y => s += `<rect x="${X(k * GATE.half) - 9}" y="${Y(y) - 4}" width="18" height="8" fill="${SISAL}" stroke="#8a7346" stroke-width=".6"/>`); for (let i = 0; i < 6; i++) s += rope(k * (GATE.lx - 0.05 - i * 0.04), GATE.l2, k * (GATE.lx - 0.05 - i * 0.04), GATE.l2 - 0.28, 1.4); });
+  [GATE.l1, GATE.l2].forEach(y => s += bam(-GATE.lx, y, GATE.lx, y, 8));
+  s += `<rect x="${X(GATE.pw / 2)}" y="${Y(GATE.l2 - 0.05)}" width="${GATE.pw * S}" height="${GATE.ph * S}" fill="${BRAND.leal}" stroke="${BRAND.ouro}" stroke-width="2.5"/>`;
+  s += svgText(cx, Y(2.47), 'JAGUAR', { size: 17, fill: BRAND.ouro, weight: 400 }).replace('font-family="Lexend, sans-serif"', 'font-family="Fugaz One, Impact, sans-serif"');
+  s += svgText(cx, Y(2.335), 'CLUBE DE DESBRAVADORES · BELO HORIZONTE · MG · BRASIL', { size: 4.8, fill: '#fff', weight: 600 });
+  // cotas
+  s += cota(X(GATE.half - 0.05), Y(0), X(-GATE.half + 0.05), Y(0), 'vão livre 2,40', 22);
+  s += cota(X(-GATE.half - 0.4), Y(GATE.l1), X(-GATE.half - 0.4), Y(0), 'passagem 2,25', 14);
+  s += cota(X(-GATE.lx - 0.2), Y(0), X(-GATE.lx - 0.2), Y(GATE.h), 'altura 2,95', 14);
+  s += cota(X(RING.x - RING.R), Y(RING.y + RING.R + 0.1), X(RING.x + RING.R), Y(RING.y + RING.R + 0.1), 'anel Ø 1,80', -10);
+  s += cota(X(-RING.x - RING.R - 0.15), Y(0), X(-RING.x - RING.R - 0.15), Y(RING.y), 'centro 1,85', -14);
+  s += cota(X(GATE.pw / 2), Y(GATE.l2 + 0.08), X(-GATE.pw / 2), Y(GATE.l2 + 0.08), 'placa 2,90 × 0,50', -10);
+  const wEnd = WING.x0 + (WING.n - 1) * WING.step;
+  s += cota(X(wEnd), Y(0), X(-wEnd), Y(0), `de ponta a ponta ${fmt(2 * wEnd)} (eixo dos postes)`, 58);
+  s += cota(X(-WING.x0), Y(0), X(-WING.x0 - WING.step), Y(0), '1,00', 22);
+  s += svgText(X(wEnd - 1.0), gy + 34, '← meninos', { size: 12, fill: '#4E5D78' }) + svgText(X(-wEnd + 1.0), gy + 34, 'meninas →', { size: 12, fill: '#4E5D78' });
+  return s + '</svg>';
+}
+const windowPathSvg = (x, yb, w, h) => `M${x - w / 2} ${yb} L${x - w / 2} ${yb - h + w / 2} A${w / 2} ${w / 2} 0 0 1 ${x + w / 2} ${yb - h + w / 2} L${x + w / 2} ${yb} Z`;
+
+// ================= medalhão em detalhe =================
+function medalhao() {
+  const S = 170, W = 640, H = 420, cx = 230, cy = 205;
+  let s = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Detalhe do medalhão com a cabeça do jaguar"><rect width="${W}" height="${H}" fill="#fff"/>`;
+  WEB.forEach(([[ax, ay], [bx, by]]) => s += `<line x1="${cx + ax * S}" y1="${cy - ay * S}" x2="${cx + bx * S}" y2="${cy - by * S}" stroke="${SISAL}" stroke-width="1.6"/>`);
+  s += `<circle cx="${cx}" cy="${cy}" r="${RING.R * S}" fill="none" stroke="${SISAL}" stroke-width="14"/><circle cx="${cx}" cy="${cy}" r="${RING.R * S}" fill="none" stroke="#8a7346" stroke-width="1" stroke-dasharray="2 5"/><circle cx="${cx}" cy="${cy}" r="${(RING.R - 0.07) * S}" fill="none" stroke="${BRAND.ouroEsc}" stroke-width="2"/>`;
+  s += `<path d="${headPath(cx, cy, S, 1)}" fill="${BRAND.ouro}" stroke="${SISAL}" stroke-width="4"/>`;
+  SPOTS.forEach(([x, y]) => s += `<path d="${windowPathSvg(cx + x * S, cy - y * S, SPOT.w * S, SPOT.h * S)}" fill="${BRAND.leal}" stroke="${BRAND.ouroEsc}" stroke-width="1"/>`);
+  s += `<circle cx="${cx + EYE[0] * S}" cy="${cy - EYE[1] * S}" r="${0.045 * S}" fill="${BRAND.claro}"/><path d="M${NOSE.map(([x, y]) => `${cx + x * S} ${cy - y * S}`).join(' L')} Z" fill="${BRAND.verm}"/>`;
+  s += cota(cx - RING.R * S, cy + RING.R * S + 6, cx + RING.R * S, cy + RING.R * S + 6, 'Ø 1,80', -12);
+  const xs = HEAD.map(p => p[0]), ys = HEAD.map(p => p[1]), x0 = Math.min(...xs), x1 = Math.max(...xs), y0 = Math.min(...ys), y1 = Math.max(...ys);
+  s += cota(cx + x1 * S + 50, cy - y0 * S, cx + x1 * S + 50, cy - y1 * S, fmt(y1 - y0), -10);
+  const lab = (x, y, tx, ty, t) => `<line x1="${x}" y1="${y}" x2="${tx}" y2="${ty}" stroke="#4E5D78" stroke-width=".8"/>` + svgText(tx + 4, ty + 4, t, { anchor: 'start', size: 12, fill: '#4E5D78' });
+  s += lab(cx + RING.R * S * 0.7, cy - RING.R * S * 0.7, 430, 40, 'anel: 3 ripas + sisal 10 mm');
+  s += lab(cx + WEB[3][0][0] * S * 0.95, cy - WEB[3][0][1] * S * 0.95, 430, 75, '24 fios de sisal 6 mm');
+  s += lab(cx + EYE[0] * S, cy - EYE[1] * S, 430, 110, 'olho azul claro (LED)');
+  if (SPOTS.length) s += lab(cx + SPOTS[0][0] * S, cy - SPOTS[0][1] * S, 430, 145, `${SPOTS.length} pintas-janela`);
+  s += lab(cx + HEAD[6][0] * S, cy - HEAD[6][1] * S, 430, 180, 'compensado 10 mm');
+  s += svgText(cx, H - 12, 'O medalhão da direita é o mesmo desenho espelhado.', { size: 12, fill: '#4E5D78' });
+  return s + '</svg>';
+}
+
+// ================= placas (SVG) =================
+function clubPlaqueSVG() {
+  const W = 1160, H = 200;
+  let s = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Placa do clube"><rect x="2" y="2" width="${W - 4}" height="${H - 4}" fill="${BRAND.leal}" stroke="${BRAND.ouro}" stroke-width="8"/>`;
+  [[90], [W - 90]].forEach(([c]) => { for (let i = 0; i < 3; i++) for (let j = 0; j < 2; j++) s += `<path d="${windowPathSvg(c - 34 + i * 34 + (j ? 17 : 0), 92 + j * 62, 18, 34)}" fill="${j ? BRAND.claro : BRAND.ouro}"/>`; });
+  s += `<text x="${W / 2}" y="112" font-family="Fugaz One, Impact" font-size="108" fill="${BRAND.ouro}" text-anchor="middle">JAGUAR</text>`;
+  s += svgText(W / 2, 148, 'CLUBE DE DESBRAVADORES · BELO HORIZONTE · MG · BRASIL', { size: 22, fill: '#fff', weight: 600 });
+  s += svgText(W / 2, 178, 'ASSOCIAÇÃO MINEIRA CENTRAL · UNIÃO SUDESTE BRASILEIRA', { size: 19, fill: BRAND.ouroCl, weight: 500 });
+  return s + '</svg>';
+}
+function unitPlaqueSVG(gr) {
+  const W = 126, H = 174, words = gr.name.toUpperCase().split(' ');
+  return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Placa ${esc(gr.name)}"><path d="${windowPathSvg(W / 2, H - 2, W - 4, H - 4)}" fill="${BRAND.ouro}"/><path d="${windowPathSvg(W / 2, H - 9, W - 18, H - 18)}" fill="${BRAND.leal}"/><rect x="9" y="${H - 34}" width="${W - 18}" height="25" fill="${gr.color}"/>`
+    + svgText(W / 2, 46, 'UNIDADE', { size: 10, fill: BRAND.ouro }) + words.map((wd, i) => `<text x="${W / 2}" y="${88 - (words.length - 1) * 11 + i * 23}" font-family="Fugaz One, Impact" font-size="${words.some(q => q.length > 6) ? 18 : 22}" fill="#fff" text-anchor="middle">${esc(wd)}</text>`).join('') + '</svg>';
+}
+function tentPlaqueSVG(gr) {
+  const W = 200, H = 150, words = gr.name.toUpperCase().split(' ');
+  return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Plaquinha ${esc(gr.name)}"><rect width="${W}" height="${H}" fill="${BRAND.leal}"/><rect y="${H - 17}" width="${W}" height="17" fill="${gr.color}"/><rect x="4" y="4" width="${W - 8}" height="${H - 8}" fill="none" stroke="${BRAND.ouro}" stroke-width="4"/>`
+    + svgText(W / 2, 28, gr.lead ? 'CLUBE JAGUAR' : 'UNIDADE', { size: 10, fill: BRAND.ouro }) + words.map((wd, i) => `<text x="${W / 2}" y="${H / 2 + 10 - (words.length - 1) * 13 + i * 26}" font-family="Fugaz One, Impact" font-size="${words.some(q => q.length > 8) ? 22 : 28}" fill="#fff" text-anchor="middle">${esc(wd)}</text>`).join('') + '</svg>';
+}
+
+// ================= cerca e lixeira (SVG) =================
+function fenceSVG() {
+  const S = 120, W = 450, H = 230, x0 = 90, gy = 185, X = x => x0 + x * S, Y = y => gy - y * S;
+  let s = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Módulo da cerca"><rect width="${W}" height="${H}" fill="#fff"/><line x1="10" y1="${gy}" x2="${W - 10}" y2="${gy}" stroke="${INK}" stroke-width="1.2"/>`;
+  [0, 2.5].forEach(x => { s += `<line x1="${X(x)}" y1="${Y(0)}" x2="${X(x)}" y2="${Y(1.2)}" stroke="${BAMBU}" stroke-width="6" stroke-linecap="round"/><line x1="${X(x) - 22}" y1="${gy}" x2="${X(x) + 22}" y2="${gy}" stroke="${BAMBU}" stroke-width="4"/><rect x="${X(x) + 6}" y="${gy - 8}" width="26" height="8" fill="#b59a6a"/><circle cx="${X(x)}" cy="${Y(1.05)}" r="6" fill="${BRAND.ouro}"/>`; });
+  [0.55, 1.05].forEach(y => s += `<line x1="${X(0)}" y1="${Y(y)}" x2="${X(2.5)}" y2="${Y(y)}" stroke="${SISAL}" stroke-width="2.4"/>`);
+  const cols = [BRAND.leal, BRAND.claro, BRAND.ouro];
+  for (let i = 0; i < 8; i++) { const x = X(0.15 + i * 0.3); s += `<path d="M${x - 12} ${Y(1.04)} L${x + 12} ${Y(1.04)} L${x} ${Y(0.84)} Z" fill="${cols[i % 3]}"/>`; }
+  s += cota(X(0), gy + 10, X(2.5), gy + 10, '2,50', -12) + cota(X(2.5) + 20, Y(0), X(2.5) + 20, Y(1.2), '1,20', 12) + cota(X(0) - 20, Y(0), X(0) - 20, Y(0.55), '0,55', -12) + cota(X(0) - 44, Y(0), X(0) - 44, Y(1.05), '1,05', -12);
+  return s + '</svg>';
+}
+function binSVG() {
+  const S = 150, W = 480, H = 240, x0 = 120, gy = 205, X = x => x0 + x * S, Y = y => gy - y * S;
+  let s = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Estação de lixo"><rect width="${W}" height="${H}" fill="#fff"/><line x1="10" y1="${gy}" x2="${W - 10}" y2="${gy}" stroke="${INK}" stroke-width="1.2"/>`;
+  [0, 1.2].forEach(x => s += `<line x1="${X(x)}" y1="${Y(0)}" x2="${X(x)}" y2="${Y(1.0)}" stroke="${BAMBU}" stroke-width="6"/>`);
+  s += `<line x1="${X(0)}" y1="${Y(1)}" x2="${X(1.2)}" y2="${Y(1)}" stroke="${BAMBU}" stroke-width="6"/>`;
+  [[0.3, '#2a6fdb', 'SECO'], [0.9, '#7a5230', 'ORGÂNICO']].forEach(([x, c, t]) => { s += `<rect x="${X(x) - 0.21 * S}" y="${Y(0.7)}" width="${0.42 * S}" height="${0.7 * S}" rx="6" fill="${c}"/><rect x="${X(x) - 0.23 * S}" y="${Y(0.74)}" width="${0.46 * S}" height="7" fill="#222"/>` + svgText(X(x), Y(0.35), t, { size: 12, fill: '#fff', weight: 600 }); });
+  s += `<rect x="${X(0.1)}" y="${Y(1.2)}" width="${1.0 * S}" height="${0.18 * S}" fill="#fff" stroke="${INK}" stroke-width=".8"/>` + svgText(X(0.35), Y(1.08), 'SECO', { size: 11, fill: '#2a6fdb', weight: 700 }) + svgText(X(0.85), Y(1.08), 'ORGÂNICO', { size: 11, fill: '#7a5230', weight: 700 });
+  s += cota(X(0), gy + 10, X(1.2), gy + 10, '1,20', -12) + cota(X(1.2) + 22, Y(0), X(1.2) + 22, Y(1.0), '1,00', 12);
+  s += svgText(X(1.2) + 60, Y(0.55), 'lixeiras', { size: 11, fill: '#4E5D78', anchor: 'start' }) + svgText(X(1.2) + 60, Y(0.45), 'de 50 L', { size: 11, fill: '#4E5D78', anchor: 'start' }) + svgText(X(1.2) + 60, Y(0.35), 'com tampa', { size: 11, fill: '#4E5D78', anchor: 'start' });
+  return s + '</svg>';
+}
+
+// ================= planta =================
+function planta() {
+  const F = M.F, lat = M.kind === 'lat', S = lat ? 40 : 30, pad = lat ? 90 : 70;
+  let tw, th, P;
+  if (lat) { tw = F.L * S + 2 * pad; th = F.D * S + 2 * pad + 40; P = (x, z) => { const f = w2f(F, x, z); return [pad + (F.L - f.u) * S, pad + (F.D - f.w) * S]; }; }
+  else { const bMax = 16.4, aMax = 31.3; tw = (bMax + 16.2) * S + 2 * pad; th = (aMax + 1.6) * S + 2 * pad; P = (x, z) => { const { a, b } = AB(x, z); return [pad + (bMax - b) * S, pad + (aMax - a) * S]; }; }
+  const poly = (pts, attrs) => `<polygon points="${pts.map(p => P(p.x, p.z).map(n => n.toFixed(1)).join(',')).join(' ')}" ${attrs}/>`;
+  const line = (a, b, attrs) => { const [x1, y1] = P(a.x, a.z), [x2, y2] = P(b.x, b.z); return `<line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}" ${attrs}/>`; };
+  const cotaW = (a, b, label, off) => { const [ax, ay] = P(a.x, a.z), [bx, by] = P(b.x, b.z); return cota(ax, ay, bx, by, label, off); };
+  const text = (p, t, o) => { const [x, y] = P(p.x, p.z); return svgText(x, y, t, o); };
+  const fr = (u, w) => f2w(F, u, w);
+  let s = `<svg viewBox="0 0 ${tw.toFixed(0)} ${th.toFixed(0)}" role="img" aria-label="Planta da área com medidas"><rect width="${tw}" height="${th}" fill="#fff"/>`;
+  // ruas
+  if (lat) { const a = fr(-2, -0.05), b = fr(F.L + 2, -0.05); s += line(a, b, `stroke="#cdb98f" stroke-width="${2.6 * S}" opacity=".45"`); s += text(fr(F.L / 2, -1.2), 'RUA · ' + M.rua.toUpperCase(), { size: 13, fill: '#7a6640', weight: 600 }); }
+  else { s += line({ x: -0.6, z: -1.3 }, { x: 23, z: -1.3 }, `stroke="#cdb98f" stroke-width="${2.6 * S}" opacity=".45"`) + line({ x: -1.3, z: -0.6 }, { x: -1.3, z: 22 }, `stroke="#cdb98f" stroke-width="${2.6 * S}" opacity=".45"`); s += text({ x: 14, z: -1.3 }, 'RUA · LADO DE 21 m', { size: 13, fill: '#7a6640', weight: 600, rot: 45 }) + text({ x: -1.3, z: 14 }, 'RUA · LADO DE 20 m', { size: 13, fill: '#7a6640', weight: 600, rot: -45 }); }
+  // lote
+  s += poly([{ x: 0, z: 0 }, { x: 21, z: 0 }, { x: 21, z: 20 }, { x: 0, z: 20 }], `fill="#eef4e4" stroke="${INK}" stroke-width="1.6"`);
+  // chão de areia: praça, avenida, corredores
+  const sandFill = `fill="#efe3c4" stroke="#c9b48a" stroke-width=".8"`;
+  if (lat) {
+    const c = F.L / 2, q = (u0, w0, u1, w1) => [fr(u0, w0), fr(u1, w0), fr(u1, w1), fr(u0, w1)];
+    s += poly(q(0.3, 0.6, F.L - 0.3, 1.5), sandFill) + poly(q(c - 3.15, 0.3, c + 3.15, M.midW0 - 0.1), sandFill);
+  } else {
+    s += poly([{ x: 4.2, z: ESQ.av0 }, { x: 20.7, z: ESQ.av0 }, { x: 20.7, z: ESQ.av1 }, { x: 4.9, z: ESQ.av1 }], sandFill);
+    s += poly([{ x: 0, z: 0 }, { x: ESQ.leg + 0.6, z: 0 }, fromAB(ESQ.pa0, ESQ.phalf), fromAB(ESQ.pa1, ESQ.phalf), fromAB(ESQ.pa1, -ESQ.phalf), fromAB(ESQ.pa0, -ESQ.phalf), { x: 0, z: ESQ.leg + 0.6 }], sandFill);
+  }
+  LAY.corridors.forEach(c => s += poly([fr(c.ua, c.wa), fr(c.ub, c.wa), fr(c.ub, c.wb), fr(c.ua, c.wb)], sandFill));
+  // barracas
+  LAY.tents.forEach(t => {
+    const [fx, fz] = FDIR[t.face], sx = -fz, sz = fx, hd = T.d / 2, hw = T.w / 2;
+    const pts = [[-hd, -hw], [hd, -hw], [hd, hw], [-hd, hw]].map(([d, w]) => ({ x: t.x + fx * d + sx * w, z: t.z + fz * d + sz * w }));
+    s += poly(pts, `fill="${t.g.color}" fill-opacity=".85" stroke="${INK}" stroke-width=".7"`);
+    const door = { x: t.x + fx * (hd - 0.25), z: t.z + fz * (hd - 0.25) }; const [dx, dy] = P(door.x, door.z); s += `<circle cx="${dx.toFixed(1)}" cy="${dy.toFixed(1)}" r="2.6" fill="#fff" stroke="${INK}" stroke-width=".6"/>`;
+    s += text({ x: t.x - fx * 0.2, z: t.z - fz * 0.2 }, String(t.num), { size: lat ? 11 : 9.5, fill: lum(t.g.color) > 0.6 ? INK : '#fff', weight: 700 });
+  });
+  // vagas livres
+  const used = new Set(LAY.tents.map(t => t.row.id + ':' + t.w.toFixed(2)));
+  LAY.rows.forEach(r => r.slots.forEach(sl => { if (used.has(r.id + ':' + sl.w.toFixed(2))) return; const [fx, fz] = FDIR[sl.face], sx = -fz, sz = fx, hd = T.d / 2, hw = T.w / 2; s += poly([[-hd, -hw], [hd, -hw], [hd, hw], [-hd, hw]].map(([d, w]) => ({ x: sl.x + fx * d + sx * w, z: sl.z + fz * d + sz * w })), `fill="none" stroke="#9aa7b8" stroke-width=".9" stroke-dasharray="4 3"`); }));
+  // portal
+  const it = PRACA, pc = it.portal, rp = (lx, lz) => ({ x: pc.c.x + Math.cos(pc.rot) * lx + Math.sin(pc.rot) * lz, z: pc.c.z - Math.sin(pc.rot) * lx + Math.cos(pc.rot) * lz });
+  const gold = `stroke="${BRAND.ouroEsc}" stroke-width="4" stroke-linecap="round"`;
+  s += line(rp(-GATE.lx, -0.07), rp(GATE.lx, -0.07), `stroke="${BRAND.leal}" stroke-width="6"`);
+  [-1, 1].forEach(k => { s += line(rp(k * GATE.half, 0), rp(k * GATE.half, GATE.brace), `stroke="${BAMBU}" stroke-width="3"`); const [x, y] = P(rp(k * GATE.half, 0).x, rp(k * GATE.half, 0).z); s += `<circle cx="${x}" cy="${y}" r="5" fill="${BAMBU}" stroke="${INK}" stroke-width=".8"/>`; });
+  const medal = lat ? [rp(RING.x, 0), rp(-RING.x, 0)] : [{ x: ESQ.ringC, z: 0.3 }, { x: 0.3, z: ESQ.ringC }];
+  const medalDir = lat ? [[Math.cos(pc.rot), -Math.sin(pc.rot)], [Math.cos(pc.rot), -Math.sin(pc.rot)]] : [[1, 0], [0, 1]];
+  medal.forEach((m, i) => { const [dx, dz] = medalDir[i]; s += line({ x: m.x - dx * RING.R, z: m.z - dz * RING.R }, { x: m.x + dx * RING.R, z: m.z + dz * RING.R }, gold); });
+  // alas
+  const wingPts = [];
+  if (lat) [1, -1].forEach(dir => { for (let i = 0; i < WING.n; i++) wingPts.push(rp(dir * (WING.x0 + i * WING.step), 0)); });
+  else for (let i = 0; i < WING.n; i++) wingPts.push({ x: ESQ.wing0 + i * WING.step, z: 0.3 }, { x: 0.3, z: ESQ.wing0 + i * WING.step });
+  wingPts.forEach(p => { const [x, y] = P(p.x, p.z); s += `<path d="${windowPathSvg(x, y + 5, 8, 11)}" fill="${BRAND.leal}" stroke="${BRAND.ouro}" stroke-width="1.2"/>`; });
+  // cerca
+  s += poly([{ x: 0.15, z: 0.15 }, { x: 20.85, z: 0.15 }, { x: 20.85, z: 19.85 }, { x: 0.15, z: 19.85 }], `fill="none" stroke="${SISAL}" stroke-width="1.6" stroke-dasharray="7 4"`);
+  // praça
+  if (it.tenda) { const c = it.tenda.c, h = it.tenda.size / 2, r = lat ? rotOf(F.V) : Math.PI / 4; const pts = [[-h, -h], [h, -h], [h, h], [-h, h]].map(([a, b]) => ({ x: c.x + Math.cos(r) * a + Math.sin(r) * b, z: c.z - Math.sin(r) * a + Math.cos(r) * b })); s += poly(pts, `fill="none" stroke="#7a8aa5" stroke-width="1" stroke-dasharray="3 3"`) + text(c, 'tenda', { size: 11, fill: '#4E5D78' }); }
+  (it.mastros || []).forEach(p => { const [x, y] = P(p.x, p.z); s += `<circle cx="${x}" cy="${y}" r="6" fill="${BRAND.verm}" stroke="#fff" stroke-width="1.5"/>`; });
+  (it.bins || []).forEach(p => { const [x, y] = P(p.x, p.z); s += `<rect x="${x - 9}" y="${y - 5}" width="9" height="10" fill="#2a6fdb"/><rect x="${x}" y="${y - 5}" width="9" height="10" fill="#7a5230"/>`; });
+  (it.paineis || []).forEach(p => { const [x, y] = P(p.x, p.z); s += `<rect x="${x - 6}" y="${y - 6}" width="12" height="12" fill="#5a3c1e"/>`; });
+  (it.sapateiras || []).forEach(p => { const [x, y] = P(p.x, p.z); s += `<rect x="${x - 6}" y="${y - 4}" width="12" height="8" fill="none" stroke="#5a3c1e" stroke-width="1.5"/>`; });
+  (it.agua || []).forEach(p => { const [x, y] = P(p.x, p.z); s += `<circle cx="${x}" cy="${y}" r="6" fill="#3b82c4" stroke="#fff" stroke-width="1.5"/>`; });
+  (it.varais || []).forEach(([a, b]) => s += line(a, b, `stroke="#8a7346" stroke-width="2" stroke-dasharray="2 3"`) + text({ x: (a.x + b.x) / 2, z: (a.z + b.z) / 2 }, 'varal', { size: 10.5, fill: '#5d4a26', halo: true }));
+  // rótulos de corredor
+  const names = ['meninas', 'liderança', 'meninos'];
+  LAY.corridors.forEach(c => { const p = fr((c.ua + c.ub) / 2, (c.wa + c.wb) / 2); s += text(p, `corredor · ${names[c.k]}`, { size: 11.5, fill: '#5d4a26', weight: 600, rot: lat ? -90 : -45, halo: true }); });
+  // ---- cotas ----
+  if (lat) {
+    const c = F.L / 2, D = F.D, chain = [M.uEdge];
+    LAY.rows.forEach(r => chain.push(r.ua, r.ub)); chain.push(F.L - 0.3);
+    const uniq = [...new Set(chain.map(n => Math.round(n * 100) / 100))].sort((a, b) => a - b);
+    const wc = D + 0.9;
+    for (let i = 0; i < uniq.length - 1; i++) { const a = uniq[i], b = uniq[i + 1]; if (b - a < 0.2) continue; s += cotaW(fr(b, wc), fr(a, wc), fmt(b - a), 0); }
+    s += cotaW(fr(F.L, D + 1.9), fr(0, D + 1.9), `lote ${fmt(F.L)}`, 0);
+    s += cotaW(fr(F.L + 1.4, 0), fr(F.L + 1.4, D), `lote ${fmt(D)}`, 0);
+    s += cotaW(fr(-0.9, 0.6), fr(-0.9, 1.5), 'avenida 0,90', 0);
+    const m0 = LAY.rows.filter(r => r.k === 0), m1 = LAY.rows.filter(r => r.k === 1);
+    const lastOuter = Math.max(...m0.flatMap(r => r.slots.map(t => t.w))) + T.w / 2;
+    s += cotaW(fr(-0.9, 1.5), fr(-0.9, lastOuter), `${m0[0].slots.length} barracas · ${fmt(lastOuter - 1.5)}`, 0);
+    s += cotaW(fr(-0.9, lastOuter), fr(-0.9, D), `fundos ${fmt(D - lastOuter)}`, 0);
+    s += cotaW(fr(c + 3.15, 0.3), fr(c + 3.15, M.midW0 - 0.1), `praça ${fmt(M.midW0 - 0.4)}`, -16);
+    s += cotaW(fr(c - 3.15, M.midW0 + 0.6), fr(c + 3.15, M.midW0 + 0.6), '6,30', 0);
+    s += cotaW(fr(c - GATE.half, -0.45), fr(c + GATE.half, -0.45), 'portão 2,64', 0);
+    const wEnd = WING.x0 + (WING.n - 1) * WING.step;
+    s += cotaW(fr(c - wEnd, -0.45), fr(c - GATE.half, -0.45), `ala + medalhão ${fmt(wEnd - GATE.half)}`, 0);
+    const lm = Math.max(...m1.flatMap(r => r.slots.map(t => t.w))) + T.w / 2;
+    s += cotaW(fr(m1[0].ua - 0.25, M.midW0), fr(m1[0].ua - 0.25, lm), `${m1[0].slots.length} barracas`, 0);
+  } else {
+    s += cotaW({ x: 22.3, z: 0 }, { x: 22.3, z: 20 }, 'lote 20,00', 0);
+    s += cotaW({ x: 21, z: 22.1 }, { x: 0, z: 22.1 }, 'lote 21,00', 0);
+    s += cotaW({ x: ESQ.leg, z: -0.6 }, { x: 0, z: -0.6 }, '2,50', 0) + cotaW({ x: -0.6, z: 0 }, { x: -0.6, z: ESQ.leg }, '2,50', 0);
+    s += cotaW({ x: 20.7 + 0.6, z: ESQ.av0 }, { x: 20.7 + 0.6, z: ESQ.av1 }, 'avenida 0,90', 0);
+    s += cotaW(fromAB(ESQ.pa0, -ESQ.phalf - 0.4), fromAB(ESQ.pa1, -ESQ.phalf - 0.4), 'praça 4,00', 0);
+    s += cotaW(fromAB(ESQ.pa1 + 0.4, -ESQ.phalf), fromAB(ESQ.pa1 + 0.4, ESQ.phalf), '4,00', 0);
+    const chain = [M.uEdge]; LAY.rows.forEach(r => chain.push(r.ua, r.ub)); chain.push(20.7);
+    const uniq = [...new Set(chain.map(n => Math.round(n * 100) / 100))].sort((a, b) => a - b);
+    for (let i = 0; i < uniq.length - 1; i++) { const a = uniq[i], b = uniq[i + 1]; if (b - a < 0.2) continue; s += cotaW({ x: b, z: 20.6 }, { x: a, z: 20.6 }, fmt(b - a), 0); }
+    s += cotaW({ x: ESQ.wing0 - 0.4, z: -0.6 }, { x: ESQ.wing0 + (WING.n - 1) * WING.step, z: -0.6 }, 'ala 4,00 + 0,40', 0);
+  }
+  s += `<g transform="translate(${tw - 70},${th - 60})"><circle r="22" fill="none" stroke="${INK}" stroke-width=".8"/><path d="M0 -20 L6 4 L0 0 L-6 4 Z" fill="${INK}" transform="rotate(${northAngle(P)})"/>${svgText(0, -27, 'N', { size: 11, weight: 700 })}</g>`;
+  return s + '</svg>';
+}
+function northAngle(P) { const a = P(10, 10), b = P(10 + northL.x, 10 + northL.z); return Math.atan2(b[0] - a[0], -(b[1] - a[1])) * 180 / Math.PI; }
+function legend() {
+  const sw = (fill, extra = '') => `<svg viewBox="0 0 26 26" width="26" height="26">${fill}${extra}</svg>`;
+  const items = [
+    [sw(`<rect x="4" y="6" width="18" height="14" fill="#efe3c4" stroke="#c9b48a"/>`), 'praça, avenida e corredores'],
+    [sw(`<line x1="2" y1="13" x2="24" y2="13" stroke="${BRAND.ouroEsc}" stroke-width="4"/>`), 'medalhões (anéis) e portão'],
+    [sw(`<path d="${windowPathSvg(13, 20, 10, 14)}" fill="${BRAND.leal}" stroke="${BRAND.ouro}"/>`), 'placa de unidade na ala'],
+    [sw(`<circle cx="13" cy="13" r="6" fill="${BRAND.verm}"/>`), 'mastros (Desbravadores e clube)'],
+    [sw(`<rect x="4" y="8" width="9" height="10" fill="#2a6fdb"/><rect x="13" y="8" width="9" height="10" fill="#7a5230"/>`), 'estação de lixo: seco e orgânico'],
+    [sw(`<circle cx="13" cy="13" r="6" fill="#3b82c4"/>`), 'mesa: água, primeiros socorros, extintor'],
+    [sw(`<rect x="7" y="7" width="12" height="12" fill="#5a3c1e"/>`), 'painéis: história e quadro de nós'],
+    [sw(`<line x1="2" y1="13" x2="24" y2="13" stroke="#8a7346" stroke-width="2" stroke-dasharray="2 3"/>`), 'varal'],
+    [sw(`<line x1="2" y1="13" x2="24" y2="13" stroke="${SISAL}" stroke-width="2" stroke-dasharray="7 4"/>`), 'cerca de sisal'],
+    [sw(`<rect x="3" y="7" width="20" height="12" fill="none" stroke="#9aa7b8" stroke-dasharray="4 3"/>`), 'vaga livre'],
+    [sw(`<circle cx="13" cy="13" r="4" fill="#fff" stroke="${INK}"/>`), 'porta da barraca']
+  ];
+  return items.map(([i, t]) => `<div>${i}<span>${t}</span></div>`).join('') + state.groups.filter(g => g.n > 0).map(g => `<div><span class="swatch" style="background:${g.color}"></span>${esc(g.name)} · ${g.n}</div>`).join('');
+}
+
+// ================= tabelas =================
+const SIDE_NAME = { M: 'Meninos', F: 'Meninas', LM: 'Liderança (lado dos meninos)', LF: 'Liderança (lado das meninas)' };
+function rowsTable() {
+  return LAY.rows.map(r => {
+    const ts = LAY.tents.filter(t => t.row === r), gs = [...new Set(ts.map(t => t.g.name))];
+    const start = r.slots.length ? Math.min(...r.slots.map(s => s.w)) - T.w / 2 : 0;
+    return `<tr><td>${r.id} · corredor ${r.k + 1}</td><td>${gs.length ? esc(gs.join(', ')) : '<span class="note">livre</span>'}</td><td class="num">${fmt(start)} m</td><td class="num">${ts.length} de ${r.slots.length}</td></tr>`;
+  }).join('');
+}
+function marksTable() {
+  return LAY.tents.map(t => `<tr><td>${t.num}</td><td><span class="swatch" style="background:${t.g.color}"></span>${esc(t.g.name)}</td><td class="num">${fmt(t.x)}</td><td class="num">${fmt(t.z)}</td><td>corredor ${t.row.k + 1}</td></tr>`).join('');
+}
+function unitsTable() {
+  return state.groups.map(g => `<tr><td><span class="swatch" style="background:${g.color}"></span>${esc(g.name)}</td><td><select class="small" data-side="${g.id}" aria-label="Lado de ${esc(g.name)}"${g.store ? ' disabled' : ''}><option value="M"${g.side === 'M' ? ' selected' : ''}>meninos</option><option value="F"${g.side === 'F' ? ' selected' : ''}>meninas</option></select></td><td class="num"><input class="small" type="number" min="0" max="8" value="${g.n}" data-n="${g.id}" aria-label="Barracas de ${esc(g.name)}"></td></tr>`).join('');
+}
+
+// ================= materiais =================
+const STOCK = 6.0;
+function cutPlan(pieces) { const bars = []; [...pieces].sort((a, b) => b.len - a.len).forEach(p => { let bar = bars.find(b => b.left >= p.len - 1e-9); if (!bar) { bar = { cuts: [], left: STOCK }; bars.push(bar); } bar.cuts.push(p); bar.left = Math.round((bar.left - p.len - 0.01) * 100) / 100; }); return bars; }
+function materials() {
+  const by = cls => BOM.bamboo.filter(p => p.cls === cls);
+  const plans = { G: cutPlan(by('G')), M: cutPlan(by('M')), F: cutPlan(by('F')) };
+  const ripas = Math.ceil(BOM.ripas / STOCK * 1.15);
+  const lashM = Math.ceil(BOM.lash * 3.0);
+  const rows = [
+    ['Bambu grosso Ø 10 cm, vara de 6 m', plans.G.length, 'pilares do portão (feixes de 3) e travessas'],
+    ['Bambu médio Ø 7 cm, vara de 6 m', plans.M.length, 'escoras, postes dos medalhões e das alas, mastros, postes de canto'],
+    ['Bambu fino Ø 4 a 5 cm, vara de 6 m', plans.F.length, 'cerca, pés em X, tripés, lixeiras, sapateiras, varais, caixas de lastro'],
+    ['Bambu rachado em ripas de 3 cm, vara de 6 m', ripas, 'anéis dos medalhões (3 camadas)'],
+    ['Corda de sisal 10 mm (m)', Math.ceil(BOM.sisal10 * 1.15), 'cordas da cerca e das alas, contorno das cabeças, capa dos anéis, estais, varais'],
+    ['Corda de sisal 6 mm (m)', Math.ceil((BOM.sisal6 + lashM) * 1.15), `teias, X das alas, franjas e ${BOM.lash} amarras (3 m cada)`],
+    ['Barbante de algodão (m)', Math.ceil(BOM.barbante * 1.2 + 60), 'bandeirolas e amarração das ripas'],
+    ['Bandeirolas de tecido 20 cm', BOM.bandeirolas, 'corda de cima da cerca dos lados da rua'],
+    ['Compensado naval 10 mm, chapa 2,20 × 1,60 m', 4, 'cabeças (2), placa do clube, 10 placas-janela, 13 plaquinhas e pintas da cerca'],
+    ['Tinta acrílica (azul leal, ouro, azul claro, vermelho) e verniz', 1, 'jogo: 4 cores de 900 ml e 1 verniz de 3,6 L'],
+    ['Bombona de 20 L (lastro com água)', BOM.galoes, 'pés do portão e caixas dos medalhões'],
+    ['Saco de areia de 10 kg', BOM.sand, 'em cima de cada pé em X (cerca e alas)'],
+    ['Lixeira de 50 L com tampa', BOM.bins, '4 estações, cada uma com seco e orgânico'],
+    ['Fita de LED solar amarela (m)', Math.ceil(BOM.led * 1.1), 'anéis, contorno das cabeças e placa do clube'],
+    ['Lanterna solar pequena', BOM.lanterns, 'topo dos postes das alas e dos 4 cantos'],
+    ['Bandeiras (Desbravadores e clube)', BOM.flags, 'mastros da praça'],
+    ['Fita zebrada (rolo de 100 m)', 1, 'cordas de barraca nos corredores']
+  ];
+  $('mats').querySelector('tbody').innerHTML = rows.map(([a, q, w]) => `<tr><td>${a}</td><td class="num">${q}</td><td>${w}</td></tr>`).join('');
+  const label = { G: 'grosso Ø 10', M: 'médio Ø 7', F: 'fino Ø 4–5' };
+  $('cuts').innerHTML = Object.entries(plans).map(([k, bars]) => `<h3 style="margin-top:12px">${label[k]} · ${bars.length} varas</h3><ol class="cuts">${bars.map(b => `<li>${b.cuts.map(c => fmt(c.len)).join(' + ')} <span class="note">(sobra ${fmt(Math.max(0, b.left))})</span></li>`).join('')}</ol>`).join('');
+  return { varas: plans.G.length + plans.M.length + plans.F.length + ripas, sisal: Math.ceil(BOM.sisal10 * 1.15 + (BOM.sisal6 + lashM) * 1.15) };
+}
+
+// ================= textos que mudam com o modo =================
+function texts(mt) {
+  const lat = M.kind === 'lat', L = LAY, ok = L.out.length === 0;
+  const m = L.need.M, f = L.need.F, tot = m + f;
+  $('stats').innerHTML = [[`${L.tents.length} de ${tot}`, 'barracas no lugar'], [`${L.total}`, 'vagas no lote'], [`${m} · ${f}`, 'meninos · meninas'], ['2,95 m', 'ponto mais alto (limite 3,00)'], ['0', 'buracos no chão'], [`${mt.varas}`, 'varas de bambu'], [`${mt.sisal} m`, 'de sisal']].map(([b, sp]) => `<div class="stat"><b>${b}</b><span>${sp}</span></div>`).join('');
+  const st = $('status');
+  if (ok) { st.className = 'status ok'; st.textContent = `Cabem as ${tot} barracas, sem misturar meninos e meninas no mesmo corredor de unidade. Sobram ${L.total - L.tents.length} vagas.`; }
+  else { const by = {}; L.out.forEach(g => by[g.name] = (by[g.name] || 0) + 1); st.className = 'status bad'; st.textContent = `Ficaram de fora ${L.out.length}: ${Object.entries(by).map(([n, k]) => `${k} de ${n}`).join(', ')}. Diminua barracas ou troque uma unidade de lado.`; }
+  $('specs').innerHTML = [['2,95 m', 'altura do portão'], ['2,40 m', 'vão livre da entrada'], ['1,80 m', 'diâmetro de cada anel'], [lat ? '16,32 m' : '2 × 7,0 m', lat ? 'frente toda, com as alas' : 'portal e alas, em cada rua'], ['10', 'placas de unidade'], ['3', 'corredores de barracas']].map(([b, sp]) => `<div><b>${b}</b>${sp}</div>`).join('');
+  $('portalNote').textContent = lat
+    ? `Na versão lateral, o portal fica no meio da ${M.rua}, tudo numa linha só: o portão no centro, um medalhão de cada lado ligado ao pilar por um braço de bambu, e as alas seguindo pela cerca. O desenho abaixo é exatamente o que se vê da rua.`
+    : 'Na versão de esquina, o portão fica no chanfro (2,50 m em cada rua) e os dois medalhões ficam um em cada rua, logo depois da quina, virados para o portão. As alas seguem pelas duas ruas. O desenho abaixo mostra as peças planificadas, como se a esquina fosse aberta numa linha só.';
+  $('areaNote').textContent = lat
+    ? `O portal abre direto na praça (6,30 × 5,30 m). Atrás dela, entre os dois mastros, começa o corredor da liderança. Uma avenida de 0,90 m corre por dentro da cerca da frente e leva às bocas dos outros dois corredores. Meninos do lado esquerdo de quem entra, meninas do direito. Nos fundos dos corredores de fora ficam o varal e uma estação de lixo de cada lado.`
+    : 'A praça é um quadrado de 4 × 4 m na diagonal, logo depois do portão. Dela sai a avenida de 0,90 m que corre pela rua de 21 m e leva às bocas dos três corredores. O corredor das meninas fica junto da rua de 20 m e o dos meninos no outro extremo, com o corredor da liderança entre os dois. Os varais ficam nos fundos.';
+  $('services').innerHTML = (lat
+    ? `<p><b>Quatro estações de lixo</b>, em pares espelhados: duas no fundo da praça, uma de cada lado dos mastros, e duas nos fundos dos corredores de fora, junto dos varais. Cada estação tem uma lixeira azul (seco) e uma marrom (orgânico) dentro de um quadro de bambu com a plaquinha.</p>
+       <p><b>Praça (6,30 × 5,30 m):</b> tenda de 3 × 3 m no centro, com as cadeirinhas em roda; painel da história do clube do lado esquerdo e quadro de nós do direito; uma sapateira de bambu de cada lado, perto da entrada.</p>
+       <p><b>Nas laterais da praça</b>, uma mesa de cada lado: à esquerda, primeiros socorros e extintor, que é o posto do segurança e recebe a inspeção; à direita, a água para beber.</p>
+       <p><b>Mastros</b>: Desbravadores à esquerda e clube à direita de quem entra, abrindo o corredor da liderança.</p>`
+    : `<p><b>Quatro estações de lixo</b>: duas na praça, uma de cada lado da diagonal logo depois do portão, e duas nos fundos, junto dos varais. Cada estação tem uma lixeira azul (seco) e uma marrom (orgânico) num quadro de bambu.</p>
+       <p><b>Praça (4 × 4 m):</b> tenda de 2,4 × 2,4 m no centro; painel da história de um lado e quadro de nós do outro.</p>
+       <p><b>Fundo da praça:</b> os dois mastros, Desbravadores e clube, um de cada lado da diagonal, e entre eles a mesa com água, primeiros socorros e extintor, que é o posto do segurança.</p>
+       <p><b>Sapateiras</b>: uma em frente à boca de cada corredor, na faixa entre a cerca e a avenida.</p>`);
+  $('stepsBH').innerHTML = [
+    '<b>Comprar e separar o bambu</b> pelo plano de corte, numerar cada peça com etiqueta (P pilar, T travessa, A anel, E escora, L ala, C cerca, M mastro).',
+    '<b>Fazer os dois anéis</b>: curvar as ripas de molho na água por uma noite, amarrar em três camadas num gabarito de 1,80 m desenhado no chão e encapar com sisal. Eles vão prontos no caminhão.',
+    '<b>Cortar e pintar o compensado</b>: as duas cabeças (uma espelhada), a placa do clube, as 10 placas-janela, as 13 plaquinhas e as pintinhas da cerca. Duas demãos e verniz.',
+    '<b>Furar a borda das cabeças</b> a cada 15 cm para a teia e testar a montagem completa de um medalhão no pátio da igreja.',
+    '<b>Costurar as bandeirolas</b> no barbante, em lances de 2,50 m, enrolados em papelão.',
+    '<b>Ensaio geral</b>: montar portão e um medalhão uma vez com a equipe, cronometrando.'
+  ].map(t => `<li>${t}</li>`).join('');
+  $('stepsCamp').innerHTML = [
+    '<span class="who">TODOS · 30 min</span><br><b>Marcar o lote</b> com trena e estacas: cantos, eixo do portal, praça e as fileiras pela tabela.',
+    '<span class="who">EQUIPE 1 (4) · 2 h</span><br><b>Portal</b>: pilares em feixe, escoras com as bombonas, travessas e placa. Depois os medalhões nas caixas de lastro, ligados ao portão.',
+    '<span class="who">EQUIPE 2 (4) · 2 h</span><br><b>Alas e cerca</b>: postes das alas com pé em X e saco de areia, placas-janela, cordas trançadas; cerca em volta do lote, bandeirolas nos lados da rua, postes de canto.',
+    '<span class="who">TODOS · 1 h</span><br><b>Praça</b>: tenda, mastros, estações de lixo, painéis, sapateiras e mesa da água.',
+    '<span class="who">UNIDADES · 1 h</span><br><b>Barracas</b> pela planta, encostadas com 5 cm de folga, portas viradas para o corredor; plaquinha e bandeirim na primeira barraca de cada unidade.',
+    '<span class="who">TODOS · 30 min</span><br><b>Conferir</b>: alinhamento, fita nas cordas, LEDs carregando no sol, nada acima de 3,00 m.'
+  ].map(t => `<li>${t}</li>`).join('');
+}
+const RULES = [
+  ['ok', 'Portal com no máximo 3 m: o ponto mais alto são os pilares, com 2,95 m.'],
+  ['ok', 'Material ecológico: bambu comprado, sisal, barbante, compensado e tinta. Nada cortado no parque.'],
+  ['ok', 'Identificação completa na placa do portão: nome do clube, Belo Horizonte, MG, Brasil, Associação Mineira Central e União Sudeste Brasileira.'],
+  ['ok', 'Nenhum buraco no chão: portão e medalhões com escoras e bombonas de água; alas, cerca, mastros e varais em pés em X, tripés e sacos de areia.'],
+  ['att', 'Estacas das barracas e dos estais: são as de qualquer barraca, mas vale confirmar com a regional que não contam como buraco.'],
+  ['ok', 'Mastros com as bandeiras dos Desbravadores e do clube na praça.'],
+  ['ok', 'Área dividida e identificada: cada unidade com plaquinha, bandeirim, cor e placa-janela no portal.'],
+  ['ok', 'Lixo separado em seco e orgânico: quatro estações.'],
+  ['ok', 'Varal para roupa molhada, sem usar as cordas das barracas.'],
+  ['ok', 'Sapateiras e painéis de pioneiria, história do clube e quadro de nós na praça.'],
+  ['ok', 'Água, primeiros socorros e extintor logo na entrada, no posto do segurança.'],
+  ['ok', 'Sem rede elétrica: toda a luz é solar (fita de LED e lanternas).'],
+  ['att', 'Rua principal e portal da Associação: falta confirmar com o Gustavo qual rua o drone filma; os botões do topo trocam a versão.']
+];
+
+// ================= fluxo =================
+function refresh(instantCam) {
+  M = MODES[state.mode] || MODES.rua21;
+  document.querySelectorAll('[data-mode]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.mode === state.mode)));
+  resetBOM();
+  LAY = layout();
+  buildSite(); buildCamp();
+  setNight(night);
+  const mt = materials();
+  texts(mt);
+  $('planta').innerHTML = planta(); $('legend').innerHTML = legend();
+  $('rows').querySelector('tbody').innerHTML = rowsTable();
+  $('marks').querySelector('tbody').innerHTML = marksTable();
+  goView(curView, instantCam);
+}
+function staticParts() {
+  $('elev').innerHTML = elevacao(); $('medal').innerHTML = medalhao(); $('clubPlaque').innerHTML = clubPlaqueSVG();
+  $('unitPlaques').innerHTML = [...PLUS, ...MINUS].map(id => G(id)).filter(Boolean).map(g => `<figure>${unitPlaqueSVG(g)}<figcaption>${esc(g.name)}</figcaption></figure>`).join('');
+  $('tentPlaques').innerHTML = state.groups.map(g => tentPlaqueSVG(g)).join('');
+  $('fence').innerHTML = fenceSVG(); $('bin').innerHTML = binSVG();
+  $('rules').innerHTML = RULES.map(([k, t]) => `<li><span class="mark ${k}">${k === 'ok' ? '✓' : '!'}</span><span>${t}</span></li>`).join('');
+  $('units').querySelector('tbody').innerHTML = unitsTable();
+}
+document.querySelectorAll('[data-mode]').forEach(b => b.addEventListener('click', () => { state.mode = b.dataset.mode; save(); refresh(true); }));
+document.querySelectorAll('[data-view]').forEach(b => b.addEventListener('click', () => goView(b.dataset.view)));
+$('hour').addEventListener('input', e => setSun(+e.target.value));
+$('night').addEventListener('click', () => setNight(!night));
+$('units').addEventListener('change', e => {
+  const t = e.target;
+  if (t.dataset.side) { G(t.dataset.side).side = t.value === 'F' ? 'F' : 'M'; }
+  if (t.dataset.n) { G(t.dataset.n).n = Math.max(0, Math.min(8, Math.round(+t.value || 0))); t.value = G(t.dataset.n).n; }
+  save(); refresh(true);
+});
+staticParts();
+refresh(true);
+$('loading').remove();
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>
