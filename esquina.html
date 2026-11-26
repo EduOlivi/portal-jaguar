@@ -134,7 +134,7 @@ footer { font-size: 12px; color: var(--muted); }
   <header>
     <div class="eyebrow">VI Campori DSA · Barretos · edição Ômega, 12 a 17/01/2027 · setor AMC</div>
     <h1>Acampamento Jaguar</h1>
-    <p class="lede">Simulação da área de acampamento do Clube Jaguar no lote de esquina de 21 × 20 m: portal na esquina, meninos de um lado e meninas do outro, 37 barracas canadenses, praça com tenda, bandeiras, lixeiras, varais e plaquinhas das unidades. Tudo sai do mesmo modelo e muda quando vocês mudam a quantidade de barracas.</p>
+    <p class="lede">Simulação da área de acampamento do Clube Jaguar no lote de esquina de 21 × 20 m: portal na esquina, meninos de um lado e meninas do outro, 35 barracas canadenses, praça com tenda, bandeiras, lixeiras, varais e plaquinhas das unidades. Tudo sai do mesmo modelo e muda quando vocês mudam a quantidade de barracas.</p>
     <div class="stats" id="stats"></div>
   </header>
 
@@ -276,7 +276,7 @@ footer { font-size: 12px; color: var(--muted); }
         <ol class="steps">
           <li><b>Cortar e numerar</b> todas as peças pelo plano de corte, com etiqueta da função (P pilar, L lintel, C cabeça, E escudo, A alas, T totem, M mastro, D demarcação).</li>
           <li><b>Cortar e pintar as placas</b>: cabeça com as pintas vazadas (serra tico-tico), escudo, placa JAGUAR, 10 totens e as plaquinhas das unidades. Duas demãos e verniz por causa da chuva.</li>
-          <li><b>Imprimir a tabela de marcação</b> das barracas e numerar as 37 canadenses com o número da tabela.</li>
+          <li><b>Imprimir a tabela de marcação</b> das barracas e numerar as 35 canadenses com o número da tabela.</li>
           <li><b>Fazer um ensaio completo</b> do portal uma vez, num sábado, pra equipe aprender a ordem.</li>
           <li><b>Carregar o caminhão</b>: a peça mais longa tem 3,60 m (vigas do lintel). Placas por cima, protegidas com papelão.</li>
         </ol>
@@ -359,11 +359,11 @@ const DEFAULT_GROUPS = [
   { id: 'pantera', name: 'Pantera', side: 'F', n: 3, color: '#2B2F3A' },
   { id: 'guepardo', name: 'Guepardo', side: 'M', n: 3, color: '#CC8A15' },
   { id: 'leopardo', name: 'Leopardo', side: 'M', n: 3, color: '#31B5FF' },
-  { id: 'lidm', name: 'Liderança masculina', side: 'M', n: 3, color: '#5B6B86', back: true, lead: true },
-  { id: 'lidf', name: 'Liderança feminina', side: 'F', n: 3, color: '#8A6B86', back: true, lead: true },
+  { id: 'lidm', name: 'Liderança masculina', side: 'M', n: 2, color: '#5B6B86', back: true, lead: true },
+  { id: 'lidf', name: 'Liderança feminina', side: 'F', n: 2, color: '#8A6B86', back: true, lead: true },
   { id: 'almox', name: 'Almoxarifado', side: 'M', n: 1, color: '#7A6A4F', back: true, lead: true }
 ];
-const STORE = 'jaguar-esquina-v2';
+const STORE = 'jaguar-esquina-v3';
 let state = { groups: DEFAULT_GROUPS.map(g => ({ ...g })), tent: { w: 2.27, d: 2.40, h: 1.5, gap: 0.4, rope: 0.4 } };
 try {
   const saved = JSON.parse(localStorage.getItem(STORE) || 'null');
@@ -1213,7 +1213,7 @@ const ITEMS_A = [
   { id: 'atd', name: 'Tenda 4 × 4 m (sugestão)', qty: 1, price: 900, src: 'est', own: true },
   { id: 'abd', name: 'Bandeiras: Brasil, Desbravadores e clube', qty: 3, price: 80, src: 'est', own: true },
   { id: 'abr', name: 'Bandeirins das unidades', qty: 10, price: 0, src: 'est', own: true },
-  { id: 'atc', name: 'Barracas canadenses', qty: 37, price: 0, src: 'est', own: true }
+  { id: 'atc', name: 'Barracas canadenses', qty: 35, price: 0, src: 'est', own: true }
 ];
 function budgetRows(items, own) {
   return items.map(it => `<tr><td>${it.name}<span class="tag ${it.src}">${it.src === 'pes' ? 'pesquisado' : 'estimativa'}</span>${it.note ? `<div class="note">Referência: ${it.note}.</div>` : ''}</td>` +

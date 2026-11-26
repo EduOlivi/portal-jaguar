@@ -137,7 +137,7 @@ footer { font-size: 12px; color: var(--muted); }
   <header>
     <div class="eyebrow">VI Campori DSA · Barretos · edição Ômega, 12 a 17/01/2027 · setor AMC</div>
     <h1>Acampamento Jaguar</h1>
-    <p class="lede">Simulação da área de acampamento do Clube Jaguar no lote de esquina de 21 × 20 m, com o portal "Salto do Jaguar" na frente do lote. Meninos de um lado e meninas do outro, 37 barracas canadenses, praça, bandeiras, lixeiras, varais e plaquinhas. Tudo muda quando vocês trocam a rua do portal ou as barracas. Para comparar com o portal na esquina, use o seletor acima.</p>
+    <p class="lede">Simulação da área de acampamento do Clube Jaguar no lote de esquina de 21 × 20 m, com o portal "Salto do Jaguar" na frente do lote. Meninos de um lado e meninas do outro, 35 barracas canadenses, praça, bandeiras, lixeiras, varais e plaquinhas. Tudo muda quando vocês trocam a rua do portal ou as barracas. Para comparar com o portal na esquina, use o seletor acima.</p>
     <div class="stats" id="stats"></div>
   </header>
 
@@ -375,12 +375,12 @@ const DEFAULT_GROUPS = [
   { id: 'pantera', name: 'Pantera', side: 'F', n: 3, color: '#2B2F3A' },
   { id: 'guepardo', name: 'Guepardo', side: 'M', n: 3, color: '#CC8A15' },
   { id: 'leopardo', name: 'Leopardo', side: 'M', n: 3, color: '#31B5FF' },
-  { id: 'lidm', name: 'Liderança masculina', side: 'M', n: 3, color: '#5B6B86', back: true, lead: true },
-  { id: 'lidf', name: 'Liderança feminina', side: 'F', n: 3, color: '#8A6B86', back: true, lead: true },
+  { id: 'lidm', name: 'Liderança masculina', side: 'M', n: 2, color: '#5B6B86', back: true, lead: true },
+  { id: 'lidf', name: 'Liderança feminina', side: 'F', n: 2, color: '#8A6B86', back: true, lead: true },
   { id: 'almox', name: 'Almoxarifado', side: 'M', n: 1, color: '#7A6A4F', back: true, lead: true }
 ];
 const UNIT_GROUPS = DEFAULT_GROUPS.filter(g => !g.lead);
-const STORE = 'jaguar-salto-v1';
+const STORE = 'jaguar-salto-v2';
 let state = { ver: 'atual', frame: 'A', arr: 'corr', groups: DEFAULT_GROUPS.map(g => ({ ...g })), tent: { w: 2.27, d: 2.40, h: 1.5, gap: 0.4, rope: 0.4, lat: 0.05, corr: 1.5 } };
 try {
   const saved = JSON.parse(localStorage.getItem(STORE) || 'null');
@@ -1037,7 +1037,7 @@ function materials() {
     { id: 'atd', name: 'Tenda 4 × 4 m (sugestão)', qty: 1, price: 700, src: 'est', own: true },
     { id: 'abd', name: 'Bandeiras: Brasil, Desbravadores e clube', qty: 3, price: 80, src: 'est', own: true },
     { id: 'abr', name: 'Bandeirins das unidades', qty: 10, price: 0, src: 'est', own: true },
-    { id: 'atc', name: 'Barracas canadenses', qty: 37, price: 0, src: 'est', own: true }
+    { id: 'atc', name: 'Barracas canadenses', qty: 35, price: 0, src: 'est', own: true }
   ];
   const rows = (items, own) => items.map(it => {
     const price = priceMemo[it.id] ?? it.price, owned = ownMemo[it.id] ?? it.own;
